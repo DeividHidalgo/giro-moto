@@ -1,0 +1,6 @@
+node_modules/
+tests/.build/
+.DS_Store
+# real project settings must never be committed
+public/config.local.js
+.env
