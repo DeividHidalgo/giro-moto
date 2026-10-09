@@ -1,0 +1,9 @@
+{
+  "name": "giro-moto",
+  "version": "1.0.0",
+  "description": "Motorcycle rental management: owner panel + customer view. Static single-file app, optional Supabase backend.",
+  "license": "MIT",
+  "private": true,
+  "scripts": { "test": "node tests/run.js", "serve": "npx --yes serve public" },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,1835 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14181d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Giro Moto">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>[hidden]{display:none!important}html,body{margin:0}</style>
+<title>Giro Moto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: app de coluna única para celular, abas fixas embaixo; a placa estilo Mercosul é o elemento visual da frota */
+:root{
+  --bg:#EDF0F3; --surface:#FFFFFF; --surface-2:#F4F6F8; --ink:#121C26; --ink-2:#4B5966; --line:#D6DCE2;
+  --accent:#0F4FA8; --accent-ink:#FFFFFF; --accent-soft:#E1EAF7;
+  --ok:#1C7C47; --ok-soft:#DCF1E4; --warn:#855400; --warn-soft:#FBEBC8; --bad:#B3261E; --bad-soft:#FADBD8;
+  --plate-band:#0B3C8C;
+  --font-display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --font-body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1218; --surface:#151E28; --surface-2:#1B2631; --ink:#E8EDF2; --ink-2:#9AA8B6; --line:#2A3744;
+    --accent:#6FA8FF; --accent-ink:#0B1520; --accent-soft:#1B2D45;
+    --ok:#5FD18F; --ok-soft:#173526; --warn:#F0B84A; --warn-soft:#3A2E12; --bad:#FF8A80; --bad-soft:#40201E;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1218; --surface:#151E28; --surface-2:#1B2631; --ink:#E8EDF2; --ink-2:#9AA8B6; --line:#2A3744;
+  --accent:#6FA8FF; --accent-ink:#0B1520; --accent-soft:#1B2D45;
+  --ok:#5FD18F; --ok-soft:#173526; --warn:#F0B84A; --warn-soft:#3A2E12; --bad:#FF8A80; --bad-soft:#40201E;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--font-body);padding-inline:16px;padding-block:0 96px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:760px;margin:0 auto}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px 10px;border-bottom:1px solid var(--line)}
+.top h1{margin:0;font:700 28px/1 var(--font-display);letter-spacing:.04em;text-transform:uppercase}
+.top p{margin:3px 0 0;font-size:12px;color:var(--ink-2)}
+#modo{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:var(--warn-soft);color:var(--warn);padding:5px 8px;border-radius:999px;text-align:right}
+main{padding-block:16px;display:grid;gap:22px}
+h2{margin:0;font:600 21px/1.1 var(--font-display);letter-spacing:.05em;text-transform:uppercase}
+h2 small{font:600 13px var(--font-body);letter-spacing:0;color:var(--ink-2);margin-left:6px}
+.eyebrow{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.pad{padding-block:24px}
+section{display:grid;gap:12px;min-width:0}
+
+/* frota */
+.bar{display:flex;gap:2px;height:14px;border-radius:7px;overflow:hidden;background:var(--surface-2)}
+.bar i{display:block;min-width:6px}
+.s-ok{background:var(--ok)} .s-info{background:var(--accent)} .s-warn{background:var(--warn)}
+.counts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.counts div{display:grid;gap:2px}
+.counts b{font:700 44px/1 var(--font-display);font-variant-numeric:tabular-nums}
+.counts span{font-size:13px;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.counts span:before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor;opacity:.9}
+.counts .c-ok span{color:var(--ok)} .counts .c-info span{color:var(--accent)} .counts .c-warn span{color:var(--warn)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.kpis div{padding:14px 16px;display:grid;gap:2px}
+.kpis div+div{border-left:1px solid var(--line)}
+.kpis span{font-size:12px;color:var(--ink-2)}
+.kpis b{font:700 28px/1.1 var(--font-display);font-variant-numeric:tabular-nums}
+@media (max-width:420px){.kpis div+div{border-left:0;border-top:1px solid var(--line)}}
+.aviso{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:14px}
+
+/* listas e cartões */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar input[type=search]{flex:1 1 180px;min-width:0}
+.cards{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.card{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;width:100%;text-align:left;cursor:pointer;min-width:0}
+button.card:hover{border-color:var(--accent)}
+.card .tx{min-width:0;display:grid;gap:2px}
+.card strong{font-weight:600;overflow-wrap:anywhere}
+.sub{font-size:13px;color:var(--ink-2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dot{width:10px;height:10px;border-radius:50%;border:1px solid var(--line);display:inline-block}
+.right{display:grid;gap:6px;justify-items:end;text-align:right}
+.right small{font-size:12px;color:var(--ink-2)}
+@media (max-width:460px){
+  .card.moto,.card.cli{grid-template-columns:auto 1fr}
+  .card .right{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;text-align:left}
+}
+.ava{width:42px;height:42px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:700 17px var(--font-display);letter-spacing:.04em}
+.alert{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.alert .pill{flex:none;margin-top:1px}
+.alert span.tx{display:grid;gap:1px;min-width:0}
+.alert small{color:var(--ink-2);overflow-wrap:anywhere}
+.pill{display:inline-block;font:600 11px/1 var(--font-body);letter-spacing:.04em;text-transform:uppercase;padding:5px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.info{background:var(--accent-soft);color:var(--accent)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.empty{grid-column:1/-1;border:1px dashed var(--line);border-radius:12px;padding:22px 16px;text-align:center;color:var(--ink-2);display:grid;gap:10px;justify-items:center}
+
+/* placa */
+.plate{display:inline-flex;flex-direction:column;border:2px solid #222;border-radius:5px;background:#fff;overflow:hidden;min-width:92px;text-align:center}
+.plate i{font:600 8px/1 var(--font-body);letter-spacing:.24em;background:var(--plate-band);color:#fff;padding:2px 0 2px .24em;font-style:normal}
+.plate b{font:700 24px/1 var(--font-display);letter-spacing:.07em;color:#111;padding:4px 8px 3px}
+
+/* locações */
+.loc{display:grid;grid-template-columns:1fr;gap:12px;cursor:default}
+.loc-top{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.loc-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:0}
+.loc-meta dt{font-size:12px;color:var(--ink-2)}
+.loc-meta dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.loc-act{display:flex;justify-content:flex-end}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button,.chip{border:0;background:transparent;border-radius:8px;padding:8px 12px;font-weight:600;font-size:14px;cursor:pointer;color:var(--ink-2);white-space:nowrap}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-block:2px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-size:13px}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+
+/* botões e formulários */
+.btn{font:600 15px var(--font-body);padding:11px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.danger{color:var(--bad)} .btn.danger.sure{background:var(--bad);color:#fff;border-color:transparent}
+.btn.sm{padding:8px 12px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+input,select,textarea{font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);width:100%;min-width:0}
+textarea{resize:vertical;font:13px/1.35 ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.loc-pay{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.loc-act{gap:8px;flex-wrap:wrap}
+.pg-list{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.pg-list li{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;background:var(--surface-2);border-radius:8px;padding:8px 10px;font-size:14px;font-variant-numeric:tabular-nums}
+.pg-list small{color:var(--ink-2);display:block}
+.hr{border:0;border-top:1px solid var(--line);margin:2px 0}
+form{display:grid;gap:14px}
+label{display:grid;gap:6px;font-weight:600;font-size:13px;color:var(--ink-2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.foot{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;padding-top:4px}
+.foot .grow{margin-right:auto}
+.ferr{margin:0;color:var(--bad);font-size:14px;font-weight:600}
+.nota{margin:0;font-size:13px;color:var(--ink-2)}
+.resumo{margin:0;padding:10px 12px;border-radius:8px;background:var(--surface-2);font-weight:600;font-variant-numeric:tabular-nums}
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(8,14,20,.58);display:flex;align-items:flex-end;justify-content:center}
+.panel{background:var(--surface);color:var(--ink);width:100%;max-width:520px;max-height:92%;overflow:auto;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:14px}
+@media (min-width:600px){.sheet{align-items:center}.panel{border-radius:16px}}
+.panel h3{margin:0;font:600 22px/1.1 var(--font-display);letter-spacing:.05em;text-transform:uppercase}
+
+/* login */
+.login{display:grid;justify-items:center;padding-block:clamp(24px,12vh,120px) 24px}
+.login-card{width:100%;max-width:380px;display:grid;gap:16px}
+.login-card .plate{justify-self:center}
+.plate.big{min-width:170px}
+.plate.big i{font-size:10px}
+.plate.big b{font-size:30px;padding:6px 14px 4px}
+.login-card h1{margin:0;font:600 26px/1.1 var(--font-display);letter-spacing:.05em;text-transform:uppercase;text-align:center}
+.login-card p{margin:0;color:var(--ink-2);text-align:center;font-size:14px}
+.login-card .ferr{text-align:center;min-height:1.2em}
+.pw{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:stretch}
+.top-r{display:flex;gap:8px;align-items:center}
+.login-card .hint{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 10px;font-size:13px}
+.acesso{display:grid;gap:10px}
+.acesso .row{display:flex;gap:8px;flex-wrap:wrap}
+.pg-list.ro li{grid-template-columns:1fr auto}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.fgrid figure{margin:0;position:relative;border-radius:8px;overflow:hidden;background:var(--surface-2);aspect-ratio:1}
+.fgrid img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+.resumo-c{display:grid;gap:10px;padding:16px;border-radius:14px;border:1px solid var(--line);background:var(--surface)}
+.resumo-c.bad{border-color:var(--bad);background:var(--bad-soft)} .resumo-c.warn{border-color:var(--warn);background:var(--warn-soft)} .resumo-c.ok{background:var(--ok-soft);border-color:transparent}
+.resumo-c .big{font-family:var(--font-display);font-size:34px;line-height:1;letter-spacing:.01em;margin:0}
+.resumo-c .lbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin:0}
+.resumo-c p{margin:0} .resumo-c .btn{justify-self:start}
+.parc{list-style:none;margin:0;padding:0;display:grid;gap:6px} .parc li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--surface-2)}
+.parc li span small{display:block;color:var(--ink-2);font-size:12px} .parc li b{white-space:nowrap}
+.fgrid .pdfbox{display:grid;place-content:center;gap:4px;height:100%;padding:8px;text-align:center;font-size:11px;color:var(--ink-2);word-break:break-all} .fgrid .pdfbox b{font-size:18px;color:var(--bad)} .fgrid .b2{left:4px;right:auto} .fgrid figure.big{grid-column:1/-1;aspect-ratio:auto}
+.fgrid figure.big img{height:auto;object-fit:contain;cursor:zoom-out}
+.fgrid figure button{position:absolute;top:4px;right:4px;border:0;border-radius:999px;background:rgba(0,0,0,.7);color:#fff;font-size:12px;font-weight:700;padding:5px 9px;cursor:pointer}
+.fgrid figure button.sure{background:var(--bad)}
+.filebtn{display:inline-flex;align-items:center;cursor:pointer;color:var(--ink);font-size:13px;width:fit-content}
+.filebtn input{display:none}
+.docs{display:grid;gap:8px}
+@media (max-width:460px){.loc-top{grid-template-columns:auto 1fr}.loc-top>.pill{grid-column:1/-1;justify-self:start}}
+/* abas */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabs-in{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.tabs button{display:grid;justify-items:center;gap:3px;border:0;background:transparent;padding:7px 4px;border-radius:10px;font-size:11px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.tabs button[aria-current=page]{background:var(--accent-soft);color:var(--accent)}
+.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;max-width:calc(100% - 32px)}
+#f-wmsg{font-family:var(--font-body);letter-spacing:normal;word-break:normal}
+a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+a.btn.disabled{opacity:.45;pointer-events:none}
+label.chk{display:flex;align-items:center;gap:10px;font-weight:500}
+label.chk input{width:auto;min-height:0;margin:0}
+@media (prefers-reduced-motion:no-preference){.panel{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+
+</head>
+<body>
+<div id="login" class="login">
+  <form id="lf" class="login-card" novalidate>
+    <span class="plate big" aria-hidden="true"><i>BRASIL</i><b>GIRO MOTO</b></span>
+    <h1>Entrar</h1>
+    <p>Administrador ou cliente</p>
+    <label>Usuário<input id="lu" name="u" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+    <label>Senha<span class="pw"><input id="lp" name="p" type="password" autocomplete="current-password" required><button type="button" class="btn sm" id="lshow">Mostrar</button></span></label>
+    <p class="hint" id="lhint" hidden></p>
+    <p class="ferr" id="lerr" role="alert"></p>
+    <button class="btn primary" id="lgo" type="submit">Entrar</button>
+    <button class="btn" id="lsetup" type="button" hidden>Primeiro acesso: criar administrador</button>
+  </form>
+</div>
+
+<div id="shell" hidden>
+<div class="app">
+  <header class="top">
+    <div><h1>Giro Moto</h1><p id="hsub">Locação de motos · painel do dono</p></div>
+    <div class="top-r"><span id="modo" hidden>Demonstração<br>não é salva</span><button class="btn sm" data-act="sair">Sair</button></div>
+  </header>
+  <main id="view" aria-live="polite"></main>
+</div>
+
+<nav class="tabs" aria-label="Seções">
+  <div class="tabs-in">
+    <button data-act="tab" data-tab="painel"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg>Painel</button>
+    <button data-act="tab" data-tab="motos"><svg viewBox="0 0 24 24"><circle cx="6" cy="16" r="3"/><circle cx="18" cy="16" r="3"/><path d="M6 16l4-7h5l3 7M10 9H7M14 9l-2 7"/></svg>Motos</button>
+    <button data-act="tab" data-tab="clientes"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1-4 4-6 8-6s7 2 8 6"/></svg>Clientes</button>
+    <button data-act="tab" data-tab="locacoes"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>Locações</button>
+  </div>
+</nav>
+</div>
+
+<div id="sheet" class="sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <h3 id="sheet-title"></h3>
+    <div id="sheet-body"></div>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+var GC=window.GIRO_CONFIG||{},SUPABASE_URL=GC.SUPABASE_URL||"",SUPABASE_KEY=GC.SUPABASE_KEY||"",EMAIL_BASE=GC.EMAIL_BASE||"admin@example.com";
+
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+
+/* ---------- datas e formatos ---------- */
+var pad=function(n){return String(n).padStart(2,'0')};
+var iso=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+var parse=function(s){var p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2])};
+var today=function(){return iso(new Date())};
+var addDays=function(s,n){var d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
+var diff=function(a,b){return Math.round((parse(b)-parse(a))/864e5)};
+var fmtD=function(s){return s?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'—'};
+var fmtShort=function(s){return s.slice(8,10)+'/'+s.slice(5,7)};
+var brl=function(n){return (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})};
+var num=function(n){return (n||0).toLocaleString('pt-BR')};
+var plural=function(n,a,b){return n+' '+(n===1?a:b)};
+
+/* ---------- placa e cor ---------- */
+var normPlaca=function(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'')};
+var placaOk=function(v){return /^[A-Z]{3}\d{4}$/.test(v)||/^[A-Z]{3}\d[A-Z]\d{2}$/.test(v)};
+var fmtPlaca=function(v){v=v||'';return /^[A-Z]{3}\d{4}$/.test(v)?v.slice(0,3)+'-'+v.slice(3):v};
+var plate=function(p){var f=esc(fmtPlaca(p)||'———');return '<span class="plate" aria-label="Placa '+f+'"><i>BRASIL</i><b>'+f+'</b></span>'};
+var CORES={pret:'#1b1b1b',branc:'#f4f4f4',vermelh:'#c62828',azul:'#1e56b5',cinz:'#8a9099',prat:'#b9bfc6',amarel:'#f2c200',verd:'#2e7d32',laranj:'#ef6c00'};
+function corHex(c){var k=String(c||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();for(var p in CORES){if(k.indexOf(p)===0)return CORES[p]}return '#9aa3ad'}
+var ST={disponivel:'Disponível',alugada:'Alugada',manutencao:'Manutenção'};
+var STC={disponivel:'ok',alugada:'info',manutencao:'warn'};
+
+/* ---------- estado ---------- */
+var COLS_ADMIN=['motos','clientes','locacoes','pagamentos','config','acessos','vistorias','manutencoes','ocorrencias'];
+var COLS_CLI=['meu','config','termo','pagamentos','locacoes','vistorias','ocorrencias'];
+var S={motos:[],clientes:[],locacoes:[],pagamentos:[],config:[],acessos:[],vistorias:[],manutencoes:[],ocorrencias:[],cobranca:null,contato:null,pix:null,termo:null,meu:null,acesso:null,mode:null,cols:COLS_ADMIN,loaded:{},tab:'painel',filtro:'todas',q:{motos:'',clientes:''},locFiltro:'ativas',demo:false};
+var store=null;
+var ready=function(){return S.cols.every(function(c){return S.loaded[c]})};
+var FORMAS={pix:'Pix',dinheiro:'Dinheiro',cartao:'Cartão',outro:'Transferência/outro',caucao:'Caução'};
+var OC={encargo:'Multa e juros de atraso',transito:'Multa de trânsito',avaria:'Avaria ou dano',outro:'Outro'};
+var COBR_PADRAO={multaPct:2,jurosMesPct:1};
+var cobr=function(){var c=S.cobranca||{};return {multaPct:c.multaPct!=null?+c.multaPct:COBR_PADRAO.multaPct,jurosMesPct:c.jurosMesPct!=null?+c.jurosMesPct:COBR_PADRAO.jurosMesPct}};
+var ocorrDe=function(id){return S.ocorrencias.filter(function(o){return o.locacaoId===id})};
+var extras=function(l,ate){return r2(ocorrDe(l.id).reduce(function(s,o){return (!ate||o.data<=ate)?s+(+o.valor||0):s},0))};
+var r2=function(n){return Math.round(n*100)/100};
+var pago=function(id){return r2(S.pagamentos.filter(function(p){return p.locacaoId===id}).reduce(function(s,p){return s+(+p.valor||0)},0))};
+var DIAS={1:'segunda',5:'sexta'};
+var DSEM=['dom','seg','ter','qua','qui','sex','sáb'];
+var wd=function(s){return DSEM[parse(s).getDay()]};
+var semanalDe=function(m){return m.semanal!=null?m.semanal:(m.diaria?r2(m.diaria*7):0)};
+/* Vencimentos semanais: toda segunda (1) ou sexta (5), a partir do primeiro dia de pagamento depois do início */
+function vencs(l,ate){
+  var out=[],d=l.inicio,dp=+l.diaPag||1,g=0;
+  while(parse(d).getDay()!==dp&&g++<7)d=addDays(d,1);
+  while(d<=ate&&out.length<520){out.push(d);d=addDays(d,7)}
+  return out;
+}
+function cobradoBase(l){
+  var t=today();
+  if(!l.valorSemanal){
+    if(l.status!=='ativa')return l.valorTotal!=null?l.valorTotal:Math.max(1,diff(l.inicio,l.encerradaEm||l.fim))*(l.valorDiaria||0);
+    return Math.max(1,diff(l.inicio,l.fim>t?l.fim:t))*(l.valorDiaria||0);
+  }
+  if(l.status!=='ativa')return l.valorTotal!=null?l.valorTotal:vencs(l,l.encerradaEm||l.fim).length*l.valorSemanal;
+  return vencs(l,t).length*l.valorSemanal;
+}
+function cobrado(l){return r2(cobradoBase(l)+extras(l))}
+function previsto(l){
+  if(!l.valorSemanal)return cobrado(l);
+  var t=today();return r2(vencs(l,l.fim>t?l.fim:t).length*l.valorSemanal+extras(l));
+}
+var saldo=function(l){return r2(cobrado(l)-pago(l.id))};
+/* atraso: parcelas vencidas antes de hoje que ainda não foram pagas */
+function atraso(l){
+  if(l.status!=='ativa')return Math.max(0,saldo(l));
+  if(!l.valorSemanal)return l.fim<=today()?Math.max(0,saldo(l)):Math.max(0,r2(extras(l,today())-pago(l.id)));
+  return Math.max(0,r2(vencs(l,addDays(today(),-1)).length*l.valorSemanal+extras(l,today())-pago(l.id)));
+}
+/* multa e juros sugeridos: só sobre as parcelas vencidas ainda em aberto (pagamentos quitam as mais antigas primeiro) */
+function encargoSugerido(l){
+  var out={valor:0,base:0,calc:0,lancado:0};
+  if(!l.valorSemanal||l.status!=='ativa')return out;
+  var c=cobr(),t=today(),resto=pago(l.id),mul=0,jur=0,base=0;
+  vencs(l,addDays(t,-1)).forEach(function(v){
+    var cob=Math.min(resto,l.valorSemanal);resto=r2(resto-cob);
+    var aberto=r2(l.valorSemanal-cob);
+    if(aberto>0){base+=aberto;mul+=aberto*c.multaPct/100;jur+=aberto*(c.jurosMesPct/30/100)*Math.max(0,diff(v,t))}
+  });
+  out.base=r2(base);out.calc=r2(mul+jur);
+  out.lancado=r2(ocorrDe(l.id).filter(function(o){return o.tipo==='encargo'}).reduce(function(s,o){return s+(+o.valor||0)},0));
+  out.valor=Math.max(0,r2(out.calc-out.lancado));
+  return out;
+}
+function proxVenc(l){
+  if(!l.valorSemanal||l.status!=='ativa')return null;
+  var t=today(),v=vencs(l,addDays(t,7));
+  for(var i=0;i<v.length;i++){if(v[i]>=t)return v[i]}
+  return null;
+}
+
+/* ---------- Pix: código "copia e cola" (BR Code estático) ---------- */
+function tlv(id,v){return id+pad(v.length)+v}
+function crc16(s){var c=0xFFFF;for(var i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(var j=0;j<8;j++){c=(c&0x8000)?((c<<1)^0x1021):(c<<1);c&=0xFFFF}}return c.toString(16).toUpperCase().padStart(4,'0')}
+function pixPayload(cfg,valor){
+  var ascii=function(s,n){return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\x20-\x7E]/g,'').toUpperCase().slice(0,n)};
+  var gui=tlv('00','br.gov.bcb.pix')+tlv('01',String(cfg.chave).trim());
+  var p=tlv('00','01')+tlv('01','11')+tlv('26',gui)+tlv('52','0000')+tlv('53','986')+(valor>0?tlv('54',valor.toFixed(2)):'')+tlv('58','BR')+tlv('59',ascii(cfg.nome,25))+tlv('60',ascii(cfg.cidade,15))+tlv('62',tlv('05','***'))+'6304';
+  return p+crc16(p);
+}
+var moto=function(id){return S.motos.find(function(m){return m.id===id})};
+var cliente=function(id){return S.clientes.find(function(c){return c.id===id})};
+var locAtiva=function(motoId){return S.locacoes.find(function(l){return l.motoId===motoId&&l.status==='ativa'})};
+var newId=function(){return 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)};
+
+/* ---------- armazenamento: banco do artefato ou memória (demonstração) ---------- */
+function mapDoc(d){return Object.assign({id:d.id},d.data())}
+function dbStore(db){
+  var onErr=function(e){toast('Falha ao ler os dados ('+(e&&e.code||'erro')+').')};
+  return {
+    sub:function(c,f){return db.collection(c).onSnapshot(function(snap){f(snap.docs.map(function(d){return mapDoc(d)}))},onErr)},
+    subWhere:function(c,fl,v,f){return db.collection(c).where(fl,'==',v).onSnapshot(function(snap){f(snap.docs.map(function(d){return mapDoc(d)}))},onErr)},
+    subDoc:function(c,id,f){return db.collection(c).doc(id).onSnapshot(function(d){f(d.exists?mapDoc(d):null)},onErr)},
+    query:function(c,fl,v){return db.collection(c).where(fl,'==',v).get().then(function(snap){return snap.docs.map(function(d){return mapDoc(d)})})},
+    getDoc:function(c,id){return db.collection(c).doc(id).get().then(function(d){return d.exists?mapDoc(d):null})},
+    list:function(c){return db.collection(c).get().then(function(snap){return snap.docs.map(function(d){return mapDoc(d)})})},
+    set:function(c,id,v){return db.collection(c).doc(id).set(v)},
+    update:function(c,id,v){return db.collection(c).doc(id).update(v)},
+    del:function(c,id){return db.collection(c).doc(id).delete()}
+  };
+}
+
+/* ---------- armazenamento: Supabase (tabela docs: col, id, data jsonb) ---------- */
+var SB=null;
+if(SUPABASE_URL&&window.supabase){SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'giromoto-auth'}})}
+function supaStore(sb){
+  var T='docs',PAGE=1000,watchers={};
+  var onErr=function(e){toast('Falha ao ler os dados. Verifique a conexão.')};
+  var ck=function(r){if(r&&r.error)throw r.error;return r.data};
+  var toDocs=function(rows){return (rows||[]).map(function(r){return Object.assign({id:r.id},r.data)})};
+  function fetchAll(c,fl,v){
+    var out=[];
+    function page(from){
+      var q=sb.from(T).select('id,data').eq('col',c);
+      if(fl)q=q.eq('data->>'+fl,v);
+      return q.order('id').range(from,from+PAGE-1).then(function(r){
+        var rows=ck(r);out=out.concat(rows);
+        return rows.length===PAGE?page(from+PAGE):out;
+      });
+    }
+    return page(0).then(toDocs);
+  }
+  function fetchOne(c,id){return sb.from(T).select('id,data').eq('col',c).eq('id',id).maybeSingle().then(function(r){var d=ck(r);return d?Object.assign({id:d.id},d.data):null})}
+  function bump(c){(watchers[c]||[]).slice().forEach(function(run){run()})}
+  function watch(c,load,f){
+    var alive=true,t=0,run=function(){if(!alive)return;load().then(function(x){if(alive)f(x)}).catch(onErr)};
+    var deb=function(){clearTimeout(t);t=setTimeout(run,120)};
+    (watchers[c]||(watchers[c]=[])).push(deb);
+    run();
+    var ch=null;
+    try{ch=sb.channel('r-'+c+'-'+Math.random().toString(36).slice(2,8)).on('postgres_changes',{event:'*',schema:'public',table:T,filter:'col=eq.'+c},deb).subscribe()}catch(e){ch=null}
+    var poll=setInterval(run,30000);
+    return function(){alive=false;clearTimeout(t);clearInterval(poll);watchers[c]=(watchers[c]||[]).filter(function(x){return x!==deb});if(ch)try{sb.removeChannel(ch)}catch(e){}};
+  }
+  return {
+    sub:function(c,f){return watch(c,function(){return fetchAll(c)},f)},
+    subWhere:function(c,fl,v,f){return watch(c,function(){return fetchAll(c,fl,v)},f)},
+    subDoc:function(c,id,f){return watch(c,function(){return fetchOne(c,id)},f)},
+    query:function(c,fl,v){return fetchAll(c,fl,v)},
+    getDoc:function(c,id){return fetchOne(c,id)},
+    list:function(c){return fetchAll(c)},
+    set:function(c,id,v){return sb.from(T).upsert({col:c,id:id,data:v},{onConflict:'col,id'}).then(function(r){ck(r);bump(c)})},
+    update:function(c,id,v){return fetchOne(c,id).then(function(d){
+      if(!d)throw new Error('registro não encontrado');
+      var m=Object.assign({},d);delete m.id;
+      return sb.from(T).upsert({col:c,id:id,data:Object.assign(m,v)},{onConflict:'col,id'}).then(function(r){ck(r);bump(c)});
+    })},
+    del:function(c,id){return sb.from(T).delete().eq('col',c).eq('id',id).then(function(r){ck(r);bump(c)})}
+  };
+}
+function memStore(){
+  var data={},subs={};
+  var D=function(c){return data[c]||(data[c]=new Map())},B=function(c){return subs[c]||(subs[c]=[])};
+  var list=function(c){var l=[];D(c).forEach(function(v,k){l.push(Object.assign({id:k},v))});return l};
+  var one=function(c,id){var v=D(c).get(id);return v?Object.assign({id:id},v):null};
+  var emit=function(c){B(c).slice().forEach(function(run){run()})};
+  var add=function(c,run){B(c).push(run);run();return function(){subs[c]=B(c).filter(function(x){return x!==run})}};
+  return {
+    sub:function(c,f){return add(c,function(){f(list(c))})},
+    subWhere:function(c,fl,v,f){return add(c,function(){f(list(c).filter(function(x){return x[fl]===v}))})},
+    subDoc:function(c,id,f){return add(c,function(){f(one(c,id))})},
+    query:function(c,fl,v){return Promise.resolve(list(c).filter(function(x){return x[fl]===v}))},
+    getDoc:function(c,id){return Promise.resolve(one(c,id))},
+    list:function(c){return Promise.resolve(list(c))},
+    set:function(c,id,v){D(c).set(id,v);emit(c);return Promise.resolve()},
+    update:function(c,id,v){D(c).set(id,Object.assign({},D(c).get(id),v));emit(c);return Promise.resolve()},
+    del:function(c,id){D(c).delete(id);emit(c);return Promise.resolve()}
+  };
+}
+function demoData(){
+  var t=today(),seg=addDays(t,-((parse(t).getDay()+6)%7)),sex=addDays(t,-((parse(t).getDay()+2)%7));
+  return {
+    motos:{'ex-m1':{modelo:'Honda CG 160 Start',placa:'RTK4B21',cor:'Vermelha',ano:2024,km:18420,semanal:600,status:'alugada',oleoInt:3000,oleoUlt:15900,revInt:6000,revUlt:12500,ipvaVenc:addDays(t,200),licVenc:addDays(t,200),seguroVenc:addDays(t,120)},
+      'ex-m2':{modelo:'Honda Biz 125',placa:'QWE2C45',cor:'Preta',ano:2023,km:31050,semanal:600,status:'alugada',oleoInt:3000,oleoUlt:27500,revInt:6000,revUlt:25000,ipvaVenc:addDays(t,200),licVenc:addDays(t,200),seguroVenc:addDays(t,120)},
+      'ex-m3':{modelo:'Yamaha Fazer 250',placa:'FJH7A09',cor:'Azul',ano:2024,km:9870,semanal:600,status:'disponivel',oleoInt:3000,oleoUlt:9000,revInt:6000,revUlt:6000,ipvaVenc:addDays(t,12),licVenc:addDays(t,200),seguroVenc:addDays(t,120)},
+      'ex-m4':{modelo:'Honda CG 160 Fan',placa:'BRA2E19',cor:'Prata',ano:2022,km:42300,semanal:600,status:'manutencao'},
+      'ex-m5':{modelo:'Honda Pop 110i',placa:'PLM1234',cor:'Branca',ano:2021,km:27800,semanal:600,status:'disponivel'}},
+    clientes:{'ex-c1':{nome:'Rafael Moreira',telefone:'(15) 99812-3344',cnh:'04821937561',cnhValidade:addDays(t,400)},
+      'ex-c2':{nome:'Juliana Prado',telefone:'(11) 97766-2210',cnh:'05937184420',cnhValidade:addDays(t,18)},
+      'ex-c3':{nome:'Marcos Teixeira',telefone:'(15) 98123-7765',cnh:'03374855912',cnhValidade:addDays(t,-12)}},
+    locacoes:{'ex-l1':{motoId:'ex-m1',clienteId:'ex-c1',inicio:addDays(seg,-14),fim:addDays(seg,28),valorSemanal:600,diaPag:1,caucao:300,status:'ativa',aceiteEm:addDays(seg,-14)},
+      'ex-l2':{motoId:'ex-m2',clienteId:'ex-c2',inicio:addDays(sex,-14),fim:addDays(sex,14),valorSemanal:600,diaPag:5,caucao:300,status:'ativa'},
+      'ex-l3':{motoId:'ex-m3',clienteId:'ex-c1',inicio:addDays(seg,-35),fim:addDays(seg,-21),valorSemanal:600,diaPag:1,caucao:400,status:'encerrada',encerradaEm:addDays(seg,-21),kmFinal:9870,valorTotal:1800}},
+    pagamentos:{'ex-p1':{locacaoId:'ex-l1',clienteId:'ex-c1',valor:600,data:addDays(seg,-14),forma:'pix'},
+      'ex-p2':{locacaoId:'ex-l1',clienteId:'ex-c1',valor:600,data:addDays(seg,-7),forma:'pix'},
+      'ex-p3':{locacaoId:'ex-l1',clienteId:'ex-c1',valor:600,data:seg,forma:'pix'},
+      'ex-p4':{locacaoId:'ex-l2',clienteId:'ex-c2',valor:600,data:addDays(sex,-14),forma:'dinheiro'},
+      'ex-p5':{locacaoId:'ex-l2',clienteId:'ex-c2',valor:600,data:addDays(sex,-7),forma:'pix'},
+      'ex-p6':{locacaoId:'ex-l3',clienteId:'ex-c1',valor:600,data:addDays(seg,-35),forma:'pix'},
+      'ex-p7':{locacaoId:'ex-l3',clienteId:'ex-c1',valor:600,data:addDays(seg,-28),forma:'pix'},
+      'ex-p8':{locacaoId:'ex-l3',clienteId:'ex-c1',valor:600,data:addDays(seg,-21),forma:'pix'}},
+    vistorias:{'v-ex-l1-entrega':{locacaoId:'ex-l1',clienteId:'ex-c1',motoId:'ex-m1',tipo:'entrega',data:addDays(seg,-14),km:18100,combustivel:'cheio',obs:'Pequeno risco no tanque, lado esquerdo.',nFotos:2,atualizadoEm:addDays(seg,-14)}},
+    manutencoes:{'ex-r1':{motoId:'ex-m1',tipo:'oleo',data:addDays(seg,-60),km:15900,custo:90,obs:'Óleo e filtro'}}
+  };
+}
+function randHex(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return hex(a)}
+async function seedMem(s){
+  var d=demoData();
+  Object.keys(d).forEach(function(c){Object.keys(d[c]).forEach(function(id){s.set(c,id,Object.assign({exemplo:true},d[c][id]))})});
+  var svg=function(t){return 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#8a9099"/><text x="200" y="160" font-size="28" text-anchor="middle" fill="#fff" font-family="sans-serif">'+t+'</text></svg>')};
+  await s.set('vistorias/v-ex-l1-entrega/fotos','ex-f1',{dataUrl:svg('Frente'),ordem:1,criadoEm:today(),exemplo:true});
+  await s.set('vistorias/v-ex-l1-entrega/fotos','ex-f2',{dataUrl:svg('Lateral'),ordem:2,criadoEm:today(),exemplo:true});
+  try{
+    var salt=randHex(16),h=await derive('rafael.moreira','demo1234',salt,AUTH.iter);
+    await s.set('acessos','a-ex-c1',{clienteId:'ex-c1',usuario:'rafael.moreira',salt:salt,iter:AUTH.iter,hash:h,ativo:true,exemplo:true});
+  }catch(e){}
+}
+
+/* ---------- toast e folha de formulário ---------- */
+var toastT=0;
+function toast(msg){var t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true},3200)}
+var lastFocus=null;
+function closeSheet(){$('#sheet').hidden=true;$('#sheet-body').innerHTML='';if(lastFocus&&document.contains(lastFocus))lastFocus.focus()}
+function openSheet(o){
+  lastFocus=document.activeElement;
+  $('#sheet-title').textContent=o.title;
+  var foot='<div class="foot">'+(o.onDelete?'<button type="button" class="btn danger grow" id="del">Excluir</button>':'')+
+    '<button type="button" class="btn" data-act="fechar">'+(o.onSubmit?'Cancelar':'Fechar')+'</button>'+
+    (o.onSubmit?'<button type="submit" class="btn primary">'+(o.submitLabel||'Salvar')+'</button>':'')+'</div>';
+  $('#sheet-body').innerHTML='<form id="f" novalidate>'+o.body+'<p class="ferr" id="ferr" role="alert"></p>'+foot+'</form>';
+  $('#sheet').hidden=false;
+  var f=$('#f'),setErr=function(m){$('#ferr').textContent=m||''};
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    if(!o.onSubmit)return;
+    if(!f.checkValidity()){f.reportValidity();return}
+    var fd={};new FormData(f).forEach(function(v,k){fd[k]=v});
+    setErr('');
+    Promise.resolve(o.onSubmit(fd)).then(function(err){if(err)setErr(err);else closeSheet()}).catch(function(){setErr('Não foi possível salvar. Verifique sua permissão de edição e tente de novo.')});
+  });
+  var del=$('#del');
+  if(del)del.addEventListener('click',function(){
+    if(!del.classList.contains('sure')){del.classList.add('sure');del.textContent='Toque de novo para excluir';return}
+    Promise.resolve(o.onDelete()).then(function(err){if(err){setErr(err);del.classList.remove('sure');del.textContent='Excluir'}else closeSheet()}).catch(function(){setErr('Não foi possível excluir.')});
+  });
+  var first=f.querySelector('input,select');if(first&&o.onSubmit)first.focus();
+}
+
+/* ---------- formulários ---------- */
+function formMoto(m){
+  var novo=!m,d=m||{status:'disponivel',km:0},alug=d.status==='alugada';
+  var opts=alug?'<option value="alugada" selected>Alugada</option>':['disponivel','manutencao'].map(function(s){return '<option value="'+s+'"'+(d.status===s?' selected':'')+'>'+ST[s]+'</option>'}).join('');
+  openSheet({
+    title:novo?'Nova moto':'Editar moto',
+    body:'<label>Modelo<input id="f-modelo" name="modelo" required autocomplete="off" placeholder="Honda CG 160 Start" value="'+esc(d.modelo)+'"></label>'+
+      '<div class="row2"><label>Placa<input id="f-placa" name="placa" required maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="ABC1D23" value="'+esc(fmtPlaca(d.placa))+'"></label>'+
+      '<label>Cor<input id="f-cor" name="cor" required list="cores" autocomplete="off" value="'+esc(d.cor)+'"></label></div>'+
+      '<datalist id="cores"><option>Preta</option><option>Branca</option><option>Vermelha</option><option>Azul</option><option>Cinza</option><option>Prata</option><option>Amarela</option><option>Verde</option><option>Laranja</option></datalist>'+
+      '<div class="row2"><label>Ano<input id="f-ano" name="ano" type="number" inputmode="numeric" min="1990" max="2100" value="'+esc(d.ano)+'"></label>'+
+      '<label>Km atual<input id="f-km" name="km" type="number" inputmode="numeric" min="0" value="'+esc(d.km)+'"></label></div>'+
+      '<div class="row2"><label>Valor semanal (R$)<input id="f-semanal" name="semanal" type="number" inputmode="decimal" min="0" step="0.01" value="'+esc(novo?600:semanalDe(d))+'"></label>'+
+      '<label>Situação<select id="f-status" name="status"'+(alug?' disabled':'')+'>'+opts+'</select></label></div>'+
+      '<label>Valor de compra (R$)<input id="f-compra" name="compra" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Opcional, para ver o retorno" value="'+esc(d.compra)+'"></label>'+
+      (alug?'<p class="nota">Esta moto está alugada. A situação muda ao encerrar a locação.</p>':'')+manutFields(d)+(novo?'':manutBlock(d)),
+    onSubmit:function(fd){
+      var modelo=(fd.modelo||'').trim(),cor=(fd.cor||'').trim(),placa=normPlaca(fd.placa);
+      if(!modelo||!cor)return 'Preencha o modelo e a cor.';
+      if(!placaOk(placa))return 'Placa inválida. Use o formato ABC-1234 ou ABC1D23.';
+      if(S.motos.some(function(x){return x.placa===placa&&x.id!==d.id}))return 'Já existe uma moto com essa placa.';
+      return store.set('motos',novo?newId():d.id,{modelo:modelo,placa:placa,cor:cor,ano:fd.ano?+fd.ano:null,km:+fd.km||0,semanal:+fd.semanal||0,compra:fd.compra!==''&&fd.compra!=null?+fd.compra:null,status:fd.status||d.status,ipvaVenc:fd.ipvaVenc||'',licVenc:fd.licVenc||'',seguroVenc:fd.seguroVenc||'',oleoInt:+fd.oleoInt||0,oleoUlt:fd.oleoUlt!==''&&fd.oleoUlt!=null?+fd.oleoUlt:null,revInt:+fd.revInt||0,revUlt:fd.revUlt!==''&&fd.revUlt!=null?+fd.revUlt:null}).then(function(){toast(novo?'Moto cadastrada':'Moto atualizada')});
+    },
+    onDelete:novo?null:function(){
+      if(alug)return 'Esta moto está alugada. Encerre a locação antes de excluir.';
+      return store.del('motos',d.id).then(function(){toast('Moto excluída')});
+    }
+  });
+}
+/* ---------- cadastro do cliente: documentos, endereço (CEP) e anexos ---------- */
+var anexosPath=function(cid){return 'clientes/'+cid+'/anexos'};
+var soDig=function(v){return String(v==null?'':v).replace(/\D/g,'')};
+function fmtCpf(v){var d=soDig(v).slice(0,11);return d.replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1-$2')}
+function fmtCep(v){var d=soDig(v).slice(0,8);return d.length>5?d.slice(0,5)+'-'+d.slice(5):d}
+function cpfOk(v){
+  var d=soDig(v);if(d.length!==11||/^(\d)\1{10}$/.test(d))return false;
+  for(var t=9;t<11;t++){var sum=0;for(var k=0;k<t;k++)sum+=+d[k]*(t+1-k);var dv=(sum*10)%11%10;if(dv!==+d[t])return false}
+  return true;
+}
+function endTexto(c){
+  if(!c)return '';
+  var a=[];
+  if(c.endereco)a.push(c.endereco+(c.numero?', '+c.numero:'')+(c.complemento?' ('+c.complemento+')':''));
+  if(c.bairro)a.push(c.bairro);
+  if(c.cidade)a.push(c.cidade+(c.uf?'/'+c.uf:''));
+  if(c.cep)a.push('CEP '+fmtCep(c.cep));
+  return a.join(' - ');
+}
+/* documento anexado: foto (reduzida) ou PDF de até 600 KB */
+function resizeDoc(file){
+  if(file.type==='application/pdf'){
+    return new Promise(function(res,rej){
+      if(file.size>600*1024)return rej(new Error('pdf grande'));
+      var fr=new FileReader();fr.onerror=function(){rej(new Error('leitura'))};fr.onload=function(){res({dataUrl:fr.result,tipo:'pdf'})};fr.readAsDataURL(file);
+    });
+  }
+  return new Promise(function(res,rej){
+    var fr=new FileReader();fr.onerror=function(){rej(new Error('leitura'))};
+    fr.onload=function(){
+      var img=new Image();img.onerror=function(){rej(new Error('imagem'))};
+      img.onload=function(){
+        var lados=[1600,1280,1000],qs=[0.7,0.55,0.45],out=null;
+        for(var i=0;i<lados.length&&!out;i++){
+          var k=Math.min(1,lados[i]/Math.max(img.width,img.height)),cv=document.createElement('canvas');
+          cv.width=Math.max(1,Math.round(img.width*k));cv.height=Math.max(1,Math.round(img.height*k));
+          cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+          for(var j=0;j<qs.length;j++){var d=cv.toDataURL('image/jpeg',qs[j]);if(d.length<=260000){out=d;break}}
+        }
+        out?res({dataUrl:out,tipo:'img'}):rej(new Error('grande'));
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function baixarAnexo(a){
+  try{
+    var p=String(a.dataUrl).split(','),mime=(p[0].match(/:(.*?);/)||[])[1]||'application/octet-stream',bin=atob(p[1]),u=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+    var url=URL.createObjectURL(new Blob([u],{type:mime})),x=document.createElement('a');
+    x.href=url;x.download=a.nome||'documento';x.target='_blank';x.rel='noopener';document.body.appendChild(x);x.click();x.remove();
+    setTimeout(function(){URL.revokeObjectURL(url)},30000);
+  }catch(e){toast('Não foi possível abrir o arquivo.')}
+}
+function buscaCep(cep){
+  if(typeof fetch!=='function')return Promise.reject(new Error('sem rede'));
+  return fetch('https://viacep.com.br/ws/'+cep+'/json/').then(function(r){if(!r.ok)throw new Error('http');return r.json()}).then(function(j){if(!j||j.erro)throw new Error('cep');return j});
+}
+function formCliente(c){
+  var novo=!c,d=c||{},cid=novo?newId():d.id,anexos=[],novos=[],MAXA=6;
+  openSheet({
+    title:novo?'Novo cliente':'Editar cliente',
+    body:'<label>Nome completo<input id="f-nome" name="nome" required autocomplete="off" value="'+esc(d.nome)+'"></label>'+
+      '<label>Telefone<input id="f-tel" name="telefone" type="tel" required autocomplete="off" placeholder="(11) 99999-0000" value="'+esc(d.telefone)+'"></label>'+
+      '<div class="row2"><label>CPF<input id="f-cpf" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" maxlength="14" value="'+esc(fmtCpf(d.cpf))+'"></label>'+
+      '<label>RG<input id="f-rg" name="rg" autocomplete="off" maxlength="20" value="'+esc(d.rg)+'"></label></div>'+
+      '<div class="row2"><label>Número da CNH<input id="f-cnh" name="cnh" required inputmode="numeric" autocomplete="off" value="'+esc(d.cnh)+'"></label>'+
+      '<label>Validade da CNH<input id="f-val" name="cnhValidade" type="date" required value="'+esc(d.cnhValidade)+'"></label></div>'+
+      '<p class="eyebrow" style="margin:6px 0 0">Endereço</p>'+
+      '<label>CEP<input id="f-cep" name="cep" inputmode="numeric" autocomplete="off" placeholder="00000-000" maxlength="9" value="'+esc(fmtCep(d.cep))+'"></label>'+
+      '<p class="nota" id="cep-st" aria-live="polite">Digite o CEP para preencher o endereço sozinho.</p>'+
+      '<label>Rua / avenida<input id="f-end" name="endereco" autocomplete="off" value="'+esc(d.endereco)+'"></label>'+
+      '<div class="row2"><label>Número<input id="f-num" name="numero" autocomplete="off" maxlength="12" value="'+esc(d.numero)+'"></label>'+
+      '<label>Complemento<input id="f-comp" name="complemento" autocomplete="off" maxlength="40" value="'+esc(d.complemento)+'"></label></div>'+
+      '<label>Bairro<input id="f-bai" name="bairro" autocomplete="off" value="'+esc(d.bairro)+'"></label>'+
+      '<div class="row2"><label>Cidade<input id="f-cid" name="cidade" autocomplete="off" value="'+esc(d.cidade)+'"></label>'+
+      '<label>UF<input id="f-uf" name="uf" autocomplete="off" maxlength="2" style="text-transform:uppercase" value="'+esc(d.uf)+'"></label></div>'+
+      '<div style="display:grid;gap:8px"><p class="eyebrow" style="margin:6px 0 0">Documentos anexados <span id="acount"></span></p><div id="agrid" class="fgrid"></div>'+
+      '<label class="btn sm filebtn">Anexar foto ou PDF<input id="f-anexos" type="file" accept="image/*,application/pdf" multiple></label>'+
+      '<p class="nota">CNH, RG, comprovante de residência. Fotos são reduzidas; PDF até 600 KB. Só você vê os anexos.</p></div>'+(novo?'':acessoBlock(d)),
+    onSubmit:function(fd){
+      var nome=(fd.nome||'').trim();if(!nome)return 'Informe o nome do cliente.';
+      var cpf=soDig(fd.cpf);if(cpf&&!cpfOk(cpf))return 'CPF inválido. Confira os números.';
+      var cep=soDig(fd.cep);if(cep&&cep.length!==8)return 'O CEP precisa ter 8 números.';
+      var uf=(fd.uf||'').trim().toUpperCase();if(uf&&!/^[A-Z]{2}$/.test(uf))return 'UF: use 2 letras, como SP.';
+      var doc=Object.assign({},d,{nome:nome,telefone:(fd.telefone||'').trim(),cnh:(fd.cnh||'').trim(),cnhValidade:fd.cnhValidade,
+        cpf:cpf,rg:(fd.rg||'').trim(),cep:cep,endereco:(fd.endereco||'').trim(),numero:(fd.numero||'').trim(),complemento:(fd.complemento||'').trim(),
+        bairro:(fd.bairro||'').trim(),cidade:(fd.cidade||'').trim(),uf:uf});
+      delete doc.id;
+      var base=Date.now();
+      var jobs=novos.map(function(a,i){return function(){return store.set(anexosPath(cid),newId(),{nome:a.nome,tipo:a.tipo,dataUrl:a.dataUrl,ordem:base+i,criadoEm:today()})}});
+      return jobs.reduce(function(p,j){return p.then(j)},store.set('clientes',cid,doc)).then(function(){toast(novo?'Cliente cadastrado':'Cliente atualizado')});
+    },
+    onDelete:novo?null:function(){
+      if(S.locacoes.some(function(l){return l.clienteId===d.id&&l.status==='ativa'}))return 'Este cliente tem uma locação ativa. Encerre-a antes de excluir.';
+      return store.list(anexosPath(d.id)).catch(function(){return []}).then(function(fs){return fs.reduce(function(p,f){return p.then(function(){return store.del(anexosPath(d.id),f.id)})},Promise.resolve())})
+        .then(function(){return store.del('clientes',d.id)}).then(function(){return removerAcesso(d.id)}).then(function(){toast('Cliente excluído')});
+    }
+  });
+  var cpfEl=$('#f-cpf'),cepEl=$('#f-cep'),st=$('#cep-st');
+  cpfEl.addEventListener('input',function(){cpfEl.value=fmtCpf(cpfEl.value)});
+  cepEl.addEventListener('input',function(){
+    cepEl.value=fmtCep(cepEl.value);var dg=soDig(cepEl.value);
+    if(dg.length<8){st.textContent='Digite o CEP para preencher o endereço sozinho.';return}
+    st.textContent='Buscando o endereço…';
+    buscaCep(dg).then(function(j){
+      if(soDig(cepEl.value)!==dg)return;
+      $('#f-end').value=j.logradouro||$('#f-end').value;$('#f-bai').value=j.bairro||$('#f-bai').value;
+      $('#f-cid').value=j.localidade||'';$('#f-uf').value=j.uf||'';
+      st.textContent='Endereço preenchido. Informe o número e o complemento.';
+      var n=$('#f-num');if(n&&n.focus)n.focus();
+    }).catch(function(e){st.textContent=e&&e.message==='cep'?'CEP não encontrado. Preencha o endereço à mão.':'Não foi possível buscar o CEP agora. Preencha o endereço à mão.'});
+  });
+  var grid=$('#agrid');
+  var pintar=function(){
+    var it=function(a,kind,k){
+      var pdf=a.tipo==='pdf';
+      return '<figure>'+(pdf?'<div class="pdfbox"><b>PDF</b><span>'+esc(a.nome||'documento')+'</span></div>':'<img alt="'+esc(a.nome||'Documento')+'" src="'+esc(a.dataUrl)+'">')+
+        '<button type="button" class="b2" data-kind="abrir" data-ref="'+kind+':'+k+'">'+(pdf?'Baixar':'Ver')+'</button>'+
+        '<button type="button" data-kind="'+kind+'" data-ref="'+kind+':'+k+'">'+(kind==='nova'?'Remover':'Excluir')+'</button></figure>';
+    };
+    grid.innerHTML=anexos.map(function(a){return it(a,'salva',a.id)}).join('')+novos.map(function(a,i){return it(a,'nova',i)}).join('');
+    $('#acount').textContent='('+(anexos.length+novos.length)+' de '+MAXA+')';
+  };
+  grid.addEventListener('click',function(e){
+    var b=e.target.closest('[data-ref]');if(!b)return;
+    var r=b.dataset.ref.split(':'),kind=r[0],k=r.slice(1).join(':');
+    var a=kind==='nova'?novos[+k]:anexos.find(function(x){return x.id===k});
+    if(b.dataset.kind==='abrir'){if(!a)return;if(a.tipo==='pdf')baixarAnexo(a);else{var fg=b.closest('figure');fg.classList.toggle('big')}return}
+    if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmar?';return}
+    if(kind==='nova'){novos.splice(+k,1);pintar();return}
+    store.del(anexosPath(cid),k).then(function(){anexos=anexos.filter(function(x){return x.id!==k});pintar()}).catch(function(){toast('Não foi possível excluir o anexo.')});
+  });
+  $('#f-anexos').addEventListener('change',function(e){
+    var files=Array.prototype.slice.call(e.target.files||[]);e.target.value='';
+    var livre=Math.max(0,MAXA-anexos.length-novos.length),take=files.slice(0,livre);
+    if(files.length>take.length)toast('Limite de '+MAXA+' anexos por cliente.');
+    take.reduce(function(p,f){return p.then(function(){return resizeDoc(f).then(function(r){r.nome=f.name||'documento';novos.push(r);pintar()},function(er){toast(er&&er.message==='pdf grande'?'PDF acima de 600 KB: comprima o arquivo.':'Não foi possível usar um dos arquivos.')})})},Promise.resolve());
+  });
+  pintar();
+  if(!novo)store.list(anexosPath(cid)).then(function(l){anexos=l.sort(function(a,b){return (a.ordem||0)-(b.ordem||0)});pintar()}).catch(function(){});
+}
+function formLoc(){
+  var livres=S.motos.filter(function(m){return m.status==='disponivel'});
+  if(!S.clientes.length||!livres.length){
+    openSheet({title:'Nova locação',body:'<p class="nota">'+(!S.clientes.length?'Cadastre um cliente antes de criar a locação.':'Nenhuma moto disponível no momento. Cadastre uma moto ou encerre uma locação.')+'</p>'});
+    return;
+  }
+  var t=today();
+  openSheet({
+    title:'Nova locação',submitLabel:'Iniciar locação',
+    body:'<label>Moto<select id="f-moto" name="motoId">'+livres.map(function(m){return '<option value="'+esc(m.id)+'">'+esc(m.modelo)+' — '+esc(fmtPlaca(m.placa))+'</option>'}).join('')+'</select></label>'+
+      '<label>Cliente<select id="f-cli" name="clienteId">'+S.clientes.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>'}).join('')+'</select></label>'+
+      '<div class="row2"><label>Início<input id="f-ini" name="inicio" type="date" required value="'+t+'"></label>'+
+      '<label>Devolução prevista<input id="f-fim" name="fim" type="date" required value="'+addDays(t,7)+'"></label></div>'+
+      '<div class="row2"><label>Valor semanal (R$)<input id="f-valor" name="valorSemanal" type="number" inputmode="decimal" min="0" step="0.01" required value="'+esc(semanalDe(livres[0])||600)+'"></label>'+
+      '<label>Pagamento toda<select id="f-dia" name="diaPag"><option value="1">Segunda</option><option value="5">Sexta</option></select></label></div>'+
+      '<label>Caução (R$)<input id="f-caucao" name="caucao" type="number" inputmode="decimal" min="0" step="0.01" value="600"></label>'+
+      '<p class="resumo" id="resumo"></p>',
+    onSubmit:function(fd){
+      if(fd.fim<fd.inicio)return 'A devolução não pode ser antes do início.';
+      var c=cliente(fd.clienteId),m=moto(fd.motoId);
+      if(!c||!m)return 'Escolha uma moto e um cliente.';
+      if(c.cnhValidade&&c.cnhValidade<fd.inicio)return 'A CNH de '+c.nome+' venceu em '+fmtD(c.cnhValidade)+'. Atualize o cadastro antes de alugar.';
+      if(m.status!=='disponivel')return 'Essa moto não está mais disponível.';
+      return store.set('locacoes',newId(),{motoId:m.id,clienteId:c.id,inicio:fd.inicio,fim:fd.fim,valorSemanal:+fd.valorSemanal||0,diaPag:+fd.diaPag||1,caucao:+fd.caucao||0,status:'ativa'})
+        .then(function(){return store.update('motos',m.id,{status:'alugada'})})
+        .then(function(){toast('Locação iniciada');S.tab='locacoes';S.locFiltro='ativas';schedule()});
+    }
+  });
+  var upd=function(){
+    var ini=$('#f-ini').value,v=+$('#f-valor').value||0;if(!ini)return;
+    var p=vencs({inicio:ini,diaPag:+$('#f-dia').value},addDays(ini,7))[0];
+    $('#resumo').textContent='Primeira cobrança: '+wd(p)+' '+fmtD(p)+' · depois '+brl(v)+' toda '+DIAS[+$('#f-dia').value];
+  };
+  $('#f-moto').addEventListener('change',function(e){var m=moto(e.target.value);if(m)$('#f-valor').value=semanalDe(m)||600;upd()});
+  ['f-ini','f-dia','f-valor'].forEach(function(i){$('#'+i).addEventListener('input',upd)});
+  $('#f-dia').addEventListener('change',upd);upd();
+}
+function saldoNaData(l,data){
+  var total=l.valorSemanal?vencs(l,data).length*l.valorSemanal:Math.max(1,diff(l.inicio,data))*(l.valorDiaria||0);
+  return {total:total,saldo:r2(total+extras(l)-pago(l.id))};
+}
+function formEncerrar(l){
+  var m=moto(l.motoId),t=today(),kmAtual=m?m.km||0:0,cau=+l.caucao||0;
+  openSheet({
+    title:'Encerrar locação',submitLabel:'Encerrar',
+    body:'<p class="nota">'+esc(m?m.modelo+' · '+fmtPlaca(m.placa):'Moto removida')+' com '+esc((cliente(l.clienteId)||{nome:'cliente removido'}).nome)+'</p>'+
+      '<div class="row2"><label>Data da devolução<input id="f-data" name="data" type="date" required min="'+esc(l.inicio)+'" value="'+t+'"></label>'+
+      '<label>Km na devolução<input id="f-kmf" name="km" type="number" inputmode="numeric" required min="'+kmAtual+'" value="'+kmAtual+'"></label></div>'+
+      '<label>Observações<input id="f-obs" name="obs" autocomplete="off" placeholder="Avarias, combustível, pendências"></label>'+
+      (cau>0?'<hr class="hr"><p class="eyebrow">Caução de '+brl(cau)+'</p>'+
+        '<div class="row2"><label>Devolver ao cliente (R$)<input id="f-cdev" name="caucaoDev" type="number" inputmode="decimal" min="0" max="'+cau+'" step="0.01" value="'+cau+'"></label>'+
+        '<label>Motivo da retenção<input id="f-cobs" name="caucaoObs" autocomplete="off" placeholder="Se reter algo"></label></div>'+
+        '<label class="chk"><input type="checkbox" id="f-cq" name="caucaoQuita" checked> Usar a parte retida para quitar o saldo em aberto</label>':'')+
+      '<p class="resumo" id="resumo"></p>',
+    onSubmit:function(fd){
+      if(fd.data<l.inicio)return 'A devolução não pode ser antes do início da locação.';
+      var km=+fd.km;if(km<kmAtual)return 'O km final não pode ser menor que o atual ('+num(kmAtual)+' km).';
+      var sn=saldoNaData(l,fd.data),total=sn.total,upd={status:'encerrada',encerradaEm:fd.data,kmFinal:km,obs:(fd.obs||'').trim(),valorTotal:total},pagCau=0;
+      if(cau>0){
+        var dev=r2(+fd.caucaoDev||0);
+        if(dev<0||dev>cau)return 'A caução devolvida deve ficar entre R$ 0,00 e '+brl(cau)+'.';
+        var ret=r2(cau-dev);
+        if(ret>0&&!(fd.caucaoObs||'').trim()&&!fd.caucaoQuita)return 'Informe o motivo da retenção da caução.';
+        upd.caucaoDevolvida=dev;upd.caucaoRetida=ret;upd.caucaoObs=(fd.caucaoObs||'').trim();
+        if(ret>0&&fd.caucaoQuita)pagCau=Math.min(ret,Math.max(0,sn.saldo));
+      }
+      return store.update('locacoes',l.id,upd)
+        .then(function(){return m?store.update('motos',m.id,{status:'disponivel',km:km}):null})
+        .then(function(){return pagCau>0?store.set('pagamentos',newId(),{locacaoId:l.id,clienteId:l.clienteId,valor:pagCau,data:fd.data,forma:'caucao',obs:'Caução retida'}):null})
+        .then(function(){toast('Locação encerrada · '+brl(total));S.locFiltro='encerradas';schedule()});
+    }
+  });
+  var tocou=false,upd=function(){
+    var dt=$('#f-data').value;if(!dt)return;
+    var sn=saldoNaData(l,dt),txt='';
+    if(l.valorSemanal){var n=vencs(l,dt).length;txt='Cobrado até a devolução: '+brl(n*l.valorSemanal)+' ('+plural(n,'parcela semanal','parcelas semanais')+' de '+brl(l.valorSemanal)+')'}
+    else txt='Total: '+brl(sn.total);
+    if(extras(l)>0)txt+=' · ocorrências '+brl(extras(l));
+    txt+=' · '+(sn.saldo>0?'saldo em aberto '+brl(sn.saldo):'sem saldo em aberto');
+    if(cau>0&&!tocou){var ret=Math.min(cau,Math.max(0,sn.saldo));$('#f-cdev').value=r2(cau-ret)}
+    $('#resumo').textContent=txt;
+  };
+  $('#f-data').addEventListener('input',upd);
+  if(cau>0)$('#f-cdev').addEventListener('input',function(){tocou=true});
+  upd();
+}
+function formEditLoc(l){
+  openSheet({
+    title:'Editar contrato',submitLabel:'Salvar',
+    body:'<p class="nota">'+esc((moto(l.motoId)||{modelo:'Moto removida'}).modelo)+' com '+esc((cliente(l.clienteId)||{nome:'cliente removido'}).nome)+'</p>'+
+      '<div class="row2"><label>Devolução prevista<input id="f-fim" name="fim" type="date" required min="'+esc(l.inicio)+'" value="'+esc(l.fim)+'"></label>'+
+      '<label>Caução (R$)<input id="f-caucao" name="caucao" type="number" inputmode="decimal" min="0" step="0.01" value="'+esc(l.caucao||0)+'"></label></div>'+
+      '<div class="row2"><label>Valor semanal (R$)<input id="f-valor" name="valorSemanal" type="number" inputmode="decimal" min="0" step="0.01" required value="'+esc(l.valorSemanal||0)+'"></label>'+
+      '<label>Pagamento toda<select id="f-dia" name="diaPag"><option value="1"'+((+l.diaPag||1)===1?' selected':'')+'>Segunda</option><option value="5"'+((+l.diaPag||1)===5?' selected':'')+'>Sexta</option></select></label></div>'+
+      '<p class="nota">Mudar o valor ou o dia vale para o contrato inteiro, inclusive para semanas já cobradas, e pede um novo aceite do termo.</p>',
+    onSubmit:function(fd){
+      if(fd.fim<l.inicio)return 'A devolução não pode ser antes do início.';
+      var v=r2(+fd.valorSemanal||0),dia=+fd.diaPag||1,upd={fim:fd.fim,caucao:r2(+fd.caucao||0),valorSemanal:v,diaPag:dia};
+      if((v!==(+l.valorSemanal||0)||dia!==(+l.diaPag||1))&&l.aceiteEm)upd.aceiteEm='';
+      return store.update('locacoes',l.id,upd).then(function(){toast('Contrato atualizado')});
+    }
+  });
+}
+function ocorrList(l,admin){
+  var L=ocorrDe(l.id).sort(function(a,b){return b.data.localeCompare(a.data)});
+  if(!L.length)return '<p class="nota">Nenhuma ocorrência registrada.</p>';
+  return '<ul class="pg-list'+(admin?'':' ro')+'">'+L.map(function(o){
+    return '<li><span>'+fmtD(o.data)+' · '+esc(OC[o.tipo]||'Outro')+'<small>'+esc(o.descricao||'')+'</small></span><b>'+brl(o.valor)+'</b>'+(admin?'<button type="button" class="btn sm danger" data-act="delOcorr" data-id="'+esc(o.id)+'" data-loc="'+esc(l.id)+'">Excluir</button>':'')+'</li>';
+  }).join('')+'</ul>';
+}
+function formOcorr(l){
+  var sg=encargoSugerido(l),c=cobr();
+  openSheet({
+    title:'Ocorrências e encargos',submitLabel:'Lançar',
+    body:'<p class="nota">Valores lançados aqui entram no saldo do cliente e ele os vê no app.</p>'+ocorrList(l,true)+'<hr class="hr">'+
+      '<label>Tipo<select id="f-otipo" name="tipo">'+Object.keys(OC).map(function(k){return '<option value="'+k+'">'+OC[k]+'</option>'}).join('')+'</select></label>'+
+      '<div class="row2"><label>Valor (R$)<input id="f-oval" name="valor" type="number" inputmode="decimal" min="0.01" step="0.01" required></label>'+
+      '<label>Data<input id="f-odata" name="data" type="date" required value="'+today()+'"></label></div>'+
+      '<label>Descrição<input id="f-odesc" name="descricao" autocomplete="off" placeholder="Ex.: multa de trânsito, arranhão no tanque"></label>'+
+      (l.valorSemanal&&l.status==='ativa'?'<div><button type="button" class="btn sm" data-act="sugEncargo" data-id="'+esc(l.id)+'">Calcular multa e juros de atraso</button></div><p class="nota">'+(sg.base>0?'Em atraso: '+brl(sg.base)+'. Multa '+c.multaPct+'% e juros '+c.jurosMesPct+'% ao mês. Sugerido agora: '+brl(sg.valor)+'.':'Sem parcelas em atraso no momento.')+'</p>':''),
+    onSubmit:function(fd){
+      var v=r2(+fd.valor);if(!(v>0))return 'Informe um valor maior que zero.';
+      return store.set('ocorrencias',newId(),{locacaoId:l.id,clienteId:l.clienteId,motoId:l.motoId,tipo:fd.tipo,valor:v,data:fd.data,descricao:(fd.descricao||'').trim()}).then(function(){toast('Lançado · '+brl(v))});
+    }
+  });
+}
+/* ---------- cobrança por WhatsApp (abre a conversa com a mensagem pronta; nada é enviado sozinho) ---------- */
+function waNum(tel){
+  var d=String(tel||'').replace(/\D/g,'');
+  if(d.length===10||d.length===11)d='55'+d;
+  return (d.length>=12&&d.length<=13&&d.indexOf('55')===0)?d:'';
+}
+function waModelo(l){
+  var at=atraso(l),px=proxVenc(l),sd=saldo(l);
+  if(at>0)return 'atraso';
+  if(l.status==='ativa'&&px)return 'lembrete';
+  if(sd>0)return 'atraso';
+  return 'devolucao';
+}
+function waTexto(l,modelo,comPix){
+  var c=cliente(l.clienteId)||{nome:''},m=moto(l.motoId)||{modelo:'moto',placa:''};
+  var nome=String(c.nome||'').split(/\s+/)[0]||'tudo bem',moto_=m.modelo+(m.placa?' ('+fmtPlaca(m.placa)+')':'');
+  var at=atraso(l),sd=saldo(l),px=proxVenc(l),valor,corpo;
+  if(modelo==='atraso'){
+    valor=at>0?at:Math.max(0,sd);
+    corpo='Olá, '+nome+'! Tudo bem? Aqui é da Giro Moto. Consta em aberto '+brl(valor)+' da locação da '+moto_+'.';
+  }else if(modelo==='lembrete'){
+    valor=sd>0?sd:(l.valorSemanal||0);
+    corpo='Olá, '+nome+'! Tudo bem? Aqui é da Giro Moto. Lembrete: a cobrança semanal de '+brl(valor)+' da '+moto_+' vence '+(px?wd(px)+' '+fmtShort(px):'esta semana')+'.';
+  }else{
+    valor=0;
+    corpo='Olá, '+nome+'! Tudo bem? Aqui é da Giro Moto. Lembrando que a devolução da '+moto_+' está prevista para '+fmtD(l.fim)+'.';
+  }
+  var pix='';
+  if(comPix&&valor>0&&S.pix){try{pix=pixPayload(S.pix,valor)}catch(e){pix=''}}
+  if(pix)corpo+='\n\nPix copia e cola (valor de '+brl(valor)+'):\n'+pix;
+  if(modelo!=='devolucao')corpo+='\n\nSe já pagou, me envie o comprovante, por favor. Obrigado!';
+  return corpo;
+}
+function formWhats(l){
+  var c=cliente(l.clienteId),num=waNum(c&&c.telefone),modelo=waModelo(l);
+  openSheet({
+    title:'Cobrar no WhatsApp',
+    body:'<p class="nota">'+esc(c?c.nome:'Cliente removido')+(num?' · '+esc(c.telefone):'')+'. O app só abre a conversa com a mensagem pronta. Você confere e toca em enviar.</p>'+
+      (num?'':'<p class="ferr">Telefone inválido ou sem DDD. Corrija no cadastro do cliente.</p>')+
+      '<label>Mensagem<select id="f-wmod"><option value="atraso">Cobrança de valor em aberto</option><option value="lembrete">Lembrete de vencimento</option><option value="devolucao">Lembrete de devolução</option></select></label>'+
+      (S.pix?'<label class="chk"><input type="checkbox" id="f-wpix" checked> Incluir Pix copia e cola</label>':'<p class="nota">Cadastre sua chave Pix no Painel para incluir o copia e cola.</p>')+
+      '<label>Texto<textarea id="f-wmsg" rows="8"></textarea></label>'+
+      '<div><a id="wa-link" class="btn primary" target="_blank" rel="noopener noreferrer" href="#">Abrir no WhatsApp</a></div>'
+  });
+  var sel=$('#f-wmod'),pxk=$('#f-wpix'),ta=$('#f-wmsg'),a=$('#wa-link');
+  sel.value=modelo;
+  var link=function(){
+    a.href=num?'https://wa.me/'+num+'?text='+encodeURIComponent(ta.value):'#';
+    a.className='btn primary'+(num?'':' disabled');
+  };
+  var gerar=function(){ta.value=waTexto(l,sel.value,pxk?pxk.checked:false);link()};
+  sel.addEventListener('change',gerar);
+  if(pxk)pxk.addEventListener('change',gerar);
+  ta.addEventListener('input',link);
+  gerar();
+}
+function formContato(){
+  var c=S.contato||{};
+  openSheet({
+    title:'WhatsApp do negócio',submitLabel:'Salvar',
+    body:'<label>Número do WhatsApp (com DDD)<input id="f-wnum" name="whatsapp" type="tel" inputmode="tel" autocomplete="off" placeholder="(15) 99999-0000" value="'+esc(c.whatsapp)+'"></label>'+
+      '<p class="nota">O cliente verá os botões "Falar com o dono" e "Enviar comprovante" na tela dele, e a conversa abre neste número. Deixe em branco para esconder os botões.</p>',
+    onSubmit:function(fd){
+      var v=(fd.whatsapp||'').trim();
+      if(v&&!waNum(v))return 'Número inválido. Informe o DDD e o número, por exemplo (15) 99999-0000.';
+      return store.set('config','contato',{whatsapp:v}).then(function(){toast('Contato salvo')});
+    }
+  });
+}
+function formCobr(){
+  var c=cobr();
+  openSheet({
+    title:'Encargos por atraso',submitLabel:'Salvar',
+    body:'<div class="row2"><label>Multa (%)<input id="f-multa" name="multaPct" type="number" inputmode="decimal" min="0" max="100" step="0.01" required value="'+esc(c.multaPct)+'"></label>'+
+      '<label>Juros (% ao mês)<input id="f-juros" name="jurosMesPct" type="number" inputmode="decimal" min="0" max="100" step="0.01" required value="'+esc(c.jurosMesPct)+'"></label></div>'+
+      '<p class="nota">O app só sugere o valor. Você confirma em Locações, no botão Ocorrências. Confira com seu advogado se esses percentuais estão previstos no termo.</p>',
+    onSubmit:function(fd){
+      var a=+fd.multaPct,b=+fd.jurosMesPct;
+      if(!(a>=0)||!(b>=0))return 'Informe valores válidos.';
+      return store.set('config','cobranca',{multaPct:a,jurosMesPct:b}).then(function(){toast('Encargos salvos')});
+    }
+  });
+}
+
+function formPag(id){
+  var l=S.locacoes.find(function(x){return x.id===id});if(!l)return;
+  var tot=cobrado(l),pg=pago(l.id),sd=r2(tot-pg),t=today();
+  var lista=S.pagamentos.filter(function(p){return p.locacaoId===id}).sort(function(a,b){return b.data.localeCompare(a.data)});
+  var rows=lista.length?'<ul class="pg-list">'+lista.map(function(p){
+    return '<li><span>'+fmtD(p.data)+'<small>'+esc(FORMAS[p.forma]||'Outro')+(p.obs?' · '+esc(p.obs):'')+'</small></span><b>'+brl(p.valor)+'</b><button type="button" class="btn sm danger" data-act="delPag" data-id="'+esc(p.id)+'" data-loc="'+esc(id)+'">Excluir</button></li>';
+  }).join('')+'</ul>':'<p class="nota">Nenhum pagamento registrado ainda.</p>';
+  var pixBox=S.pix?
+    '<hr class="hr"><label>Pix copia e cola<textarea id="f-pix" rows="3" readonly></textarea></label><div><button type="button" class="btn sm" data-act="copiarPix">Copiar código</button></div><p class="nota">O código usa o valor do campo acima. O Pix cai direto na sua conta; quando receber, registre o pagamento aqui.</p>':
+    '<hr class="hr"><p class="nota">Para cobrar por Pix, cadastre sua chave. <button type="button" class="btn sm" data-act="cfgPix">Configurar Pix</button></p>';
+  openSheet({
+    title:'Pagamentos',submitLabel:'Registrar pagamento',
+    body:'<p class="resumo">'+(l.status==='ativa'?'Cobrado até hoje ':'Cobrado ')+brl(tot)+' · Pago '+brl(pg)+' · '+(sd>0?'Saldo '+brl(sd):sd<0?'Crédito '+brl(-sd):'Quitado')+'</p>'+rows+
+      '<div class="row2"><label>Valor (R$)<input id="f-valor" name="valor" type="number" inputmode="decimal" min="0.01" step="0.01" required value="'+(sd>0?sd:(l.valorSemanal||''))+'"></label>'+
+      '<label>Data<input id="f-pdata" name="data" type="date" required value="'+t+'"></label></div>'+
+      '<div class="row2"><label>Forma<select id="f-forma" name="forma">'+Object.keys(FORMAS).filter(function(k){return k!=='caucao'}).map(function(k){return '<option value="'+k+'">'+FORMAS[k]+'</option>'}).join('')+'</select></label>'+
+      '<label>Observação<input id="f-pobs" name="obs" autocomplete="off" placeholder="Opcional"></label></div>'+pixBox,
+    onSubmit:function(fd){
+      var v=r2(+fd.valor);if(!(v>0))return 'Informe um valor maior que zero.';
+      return store.set('pagamentos',newId(),{locacaoId:id,clienteId:l.clienteId,valor:v,data:fd.data,forma:fd.forma,obs:(fd.obs||'').trim()}).then(function(){toast('Pagamento registrado · '+brl(v))});
+    }
+  });
+  if(S.pix){var upd=function(){try{$('#f-pix').value=pixPayload(S.pix,+$('#f-valor').value||0)}catch(e){}};$('#f-valor').addEventListener('input',upd);upd()}
+}
+var PIXT={celular:'Celular',doc:'CPF ou CNPJ',email:'E-mail',aleatoria:'Chave aleatória'};
+function pixTipoDe(ch){
+  ch=String(ch||'').trim();
+  if(ch.charAt(0)==='+')return 'celular';
+  if(ch.indexOf('@')>-1)return 'email';
+  if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ch))return 'aleatoria';
+  var d=ch.replace(/\D/g,'');
+  if(d.length===14||(d.length===11&&/^[\d.\-\s]+$/.test(ch)&&/[.\-]/.test(ch)))return 'doc';
+  return 'celular';
+}
+/* devolve a chave no formato que o Pix exige, ou {erro} */
+function pixChave(tipo,raw){
+  var v=String(raw||'').trim(),d=v.replace(/\D/g,'');
+  if(tipo==='celular'){
+    if(d.length>=12&&d.length<=13&&d.indexOf('55')===0)return {chave:'+'+d};
+    if(d.length===10||d.length===11)return {chave:'+55'+d};
+    return {erro:'Celular inválido. Informe o DDD e o número, por exemplo (15) 99999-0000.'};
+  }
+  if(tipo==='doc'){
+    if(d.length===11||d.length===14)return {chave:d};
+    return {erro:'CPF deve ter 11 números e CNPJ, 14.'};
+  }
+  if(tipo==='email'){
+    v=v.toLowerCase();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)?{chave:v}:{erro:'E-mail inválido.'};
+  }
+  v=v.toLowerCase();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v)?{chave:v}:{erro:'Chave aleatória inválida. Ela tem o formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.'};
+}
+function formPix(){
+  var d=S.pix||{},tipo=d.tipo||(d.chave?pixTipoDe(d.chave):'celular');
+  openSheet({
+    title:'Receber por Pix',
+    body:'<label>Tipo da chave<select id="f-ptipo" name="tipo">'+Object.keys(PIXT).map(function(k){return '<option value="'+k+'"'+(tipo===k?' selected':'')+'>'+PIXT[k]+'</option>'}).join('')+'</select></label>'+
+      '<label>Chave Pix<input id="f-chave" name="chave" required autocomplete="off" placeholder="Como está cadastrada no seu banco" value="'+esc(d.chave)+'"></label>'+
+      '<div class="row2"><label>Nome do recebedor<input id="f-pnome" name="nome" required maxlength="25" autocomplete="off" value="'+esc(d.nome)+'"></label>'+
+      '<label>Cidade<input id="f-pcid" name="cidade" required maxlength="15" autocomplete="off" value="'+esc(d.cidade)+'"></label></div>'+
+      '<p class="nota">Com isso o app gera o Pix copia e cola de cada cobrança. O dinheiro vai direto para a sua conta e o app não confirma o recebimento: você registra o pagamento quando ele cair. Para celular, digite o número com DDD, e o app coloca o +55 sozinho. Escolha o tipo certo: um celular de 11 dígitos pode ser confundido com CPF.</p>',
+    onSubmit:function(fd){
+      var nome=(fd.nome||'').trim(),cidade=(fd.cidade||'').trim(),raw=(fd.chave||'').trim();
+      if(!raw||!nome||!cidade)return 'Preencha a chave, o nome e a cidade.';
+      var t=fd.tipo||pixTipoDe(raw),r=pixChave(t,raw);
+      if(r.erro)return r.erro;
+      return store.set('config','pix',{tipo:t,chave:r.chave,nome:nome,cidade:cidade}).then(function(){toast('Pix configurado')});
+    },
+    onDelete:S.pix?function(){return store.del('config','pix').then(function(){toast('Chave Pix removida')})}:null
+  });
+}
+
+/* ---------- manutenção e documentos da moto ---------- */
+var TIPOS={oleo:'Troca de óleo',revisao:'Revisão',pneu:'Pneu',freio:'Freio',corrente:'Corrente e relação',outro:'Outro'};
+function ultimoKm(m,tipo,campo){
+  var ks=S.manutencoes.filter(function(r){return r.motoId===m.id&&r.tipo===tipo&&r.km!=null}).map(function(r){return +r.km});
+  if(m[campo]!=null&&m[campo]!=='')ks.push(+m[campo]);
+  return ks.length?Math.max.apply(null,ks):null;
+}
+function manutInfo(m){
+  var out=[],t=today(),km=m.km||0;
+  [['ipvaVenc','IPVA'],['licVenc','Licenciamento'],['seguroVenc','Seguro']].forEach(function(x){
+    var v=m[x[0]];if(!v)return;var d=diff(t,v);
+    if(d<0)out.push({lv:'bad',k:'doc',t:x[1]+' vencido há '+plural(-d,'dia','dias')});
+    else if(d<=30)out.push({lv:'warn',k:'doc',t:x[1]+' vence em '+plural(d,'dia','dias')+' ('+fmtD(v)+')'});
+  });
+  [['oleo','Troca de óleo','oleoInt','oleoUlt',300],['revisao','Revisão','revInt','revUlt',500]].forEach(function(x){
+    var inte=+m[x[2]]||0;if(!inte)return;
+    var last=ultimoKm(m,x[0],x[3]);if(last==null)return;
+    var rest=inte-(km-last);
+    if(rest<=0)out.push({lv:'bad',k:'man',t:x[1]+' vencida há '+num(-rest)+' km'});
+    else if(rest<=x[4])out.push({lv:'warn',k:'man',t:x[1]+' em '+num(rest)+' km'});
+  });
+  return out;
+}
+function manutLinha(m){
+  var i=manutInfo(m);if(!i.length)return '';
+  var bad=i.some(function(x){return x.lv==='bad'});
+  return '<span class="sub"><span class="pill '+(bad?'bad':'warn')+'">Atenção</span> '+esc(i[0].t)+(i.length>1?' +'+(i.length-1):'')+'</span>';
+}
+function manutFields(d){
+  return '<hr class="hr"><p class="eyebrow">Documentos e manutenção</p>'+
+    '<div class="row2"><label>IPVA vence em<input id="f-ipva" name="ipvaVenc" type="date" value="'+esc(d.ipvaVenc||'')+'"></label><label>Licenciamento vence em<input id="f-lic" name="licVenc" type="date" value="'+esc(d.licVenc||'')+'"></label></div>'+
+    '<label>Seguro vence em<input id="f-seg" name="seguroVenc" type="date" value="'+esc(d.seguroVenc||'')+'"></label>'+
+    '<div class="row2"><label>Trocar óleo a cada (km)<input id="f-oint" name="oleoInt" type="number" inputmode="numeric" min="0" value="'+esc(d.oleoInt!=null?d.oleoInt:3000)+'"></label><label>Última troca de óleo (km)<input id="f-oult" name="oleoUlt" type="number" inputmode="numeric" min="0" value="'+esc(d.oleoUlt!=null?d.oleoUlt:'')+'"></label></div>'+
+    '<div class="row2"><label>Revisão a cada (km)<input id="f-rint" name="revInt" type="number" inputmode="numeric" min="0" value="'+esc(d.revInt!=null?d.revInt:6000)+'"></label><label>Última revisão (km)<input id="f-rult" name="revUlt" type="number" inputmode="numeric" min="0" value="'+esc(d.revUlt!=null?d.revUlt:'')+'"></label></div>'+
+    '<p class="nota">Use os intervalos do manual da moto. Os alertas aparecem no Painel e usam o km da última devolução ou o que você informar na moto.</p>';
+}
+function manutBlock(m){
+  var L=S.manutencoes.filter(function(r){return r.motoId===m.id}).sort(function(a,b){return b.data.localeCompare(a.data)}),tot=r2(L.reduce(function(s,r){return s+(+r.custo||0)},0));
+  return '<hr class="hr"><div class="acesso"><p class="eyebrow">Histórico de manutenção'+(L.length?' · '+brl(tot)+' no total':'')+'</p>'+
+    (L.length?'<ul class="pg-list">'+L.slice(0,6).map(function(r){return '<li><span>'+fmtD(r.data)+' · '+esc(TIPOS[r.tipo]||'Outro')+'<small>'+num(r.km)+' km'+(r.obs?' · '+esc(r.obs):'')+'</small></span><b>'+brl(r.custo)+'</b><button type="button" class="btn sm danger" data-act="delManut" data-id="'+esc(r.id)+'" data-moto="'+esc(m.id)+'">Excluir</button></li>'}).join('')+'</ul>':'<p class="nota">Nenhuma manutenção registrada.</p>')+
+    '<div class="row"><button type="button" class="btn sm" data-act="novaManut" data-id="'+esc(m.id)+'">Registrar manutenção</button></div></div>';
+}
+function formManut(m){
+  openSheet({
+    title:'Registrar manutenção',submitLabel:'Registrar',
+    body:'<p class="nota">'+esc(m.modelo)+' · '+esc(fmtPlaca(m.placa))+'</p>'+
+      '<div class="row2"><label>Tipo<select id="f-mtipo" name="tipo">'+Object.keys(TIPOS).map(function(k){return '<option value="'+k+'">'+TIPOS[k]+'</option>'}).join('')+'</select></label>'+
+      '<label>Data<input id="f-mdata" name="data" type="date" required value="'+today()+'"></label></div>'+
+      '<div class="row2"><label>Km da moto<input id="f-mkm" name="km" type="number" inputmode="numeric" min="0" required value="'+esc(m.km||0)+'"></label>'+
+      '<label>Custo (R$)<input id="f-mcusto" name="custo" type="number" inputmode="decimal" min="0" step="0.01" value="0"></label></div>'+
+      '<label>Observações<input id="f-mobs" name="obs" autocomplete="off" placeholder="Peças, oficina, detalhes"></label>',
+    onSubmit:function(fd){
+      var km=+fd.km||0;
+      return store.set('manutencoes',newId(),{motoId:m.id,tipo:fd.tipo,data:fd.data,km:km,custo:r2(+fd.custo||0),obs:(fd.obs||'').trim()})
+        .then(function(){var cur=moto(m.id);return cur&&km>(cur.km||0)?store.update('motos',m.id,{km:km}):null})
+        .then(function(){toast('Manutenção registrada')});
+    }
+  });
+}
+
+/* ---------- termo de locação ---------- */
+var TERMO_PADRAO=[
+  'TERMO DE LOCAÇÃO DE MOTOCICLETA','',
+  'LOCADOR: {locador}','LOCATÁRIO: {cliente}, CPF {cpf}, RG {rg}, CNH nº {cnh}, telefone {telefone}','Endereço: {endereco}','',
+  '1. OBJETO. O locador entrega ao locatário, em locação, a motocicleta {moto}, placa {placa}, cor {cor}, ano {ano}, em bom estado de uso e conservação, conforme a vistoria de entrega.','',
+  '2. PRAZO. A locação vai de {inicio} até {devolucao} e pode ser prorrogada por acordo entre as partes.','',
+  '3. VALOR E PAGAMENTO. O locatário paga {valorSemanal} por semana, toda {diaPagamento}, por Pix ou outra forma combinada.','',
+  '4. ATRASO. O atraso no pagamento autoriza o locador a cobrar o valor devido e, se o atraso continuar, a retomar a motocicleta. Multa e juros por atraso seguem o combinado entre as partes.','',
+  '5. CAUÇÃO. O locatário deixa caução de {caucao}, devolvida ao fim da locação, depois de descontados danos, multas e valores em aberto.','',
+  '6. USO. A motocicleta deve ser conduzida somente pelo locatário, habilitado na categoria correta, em uso lícito. É proibido emprestá-la a terceiros ou usá-la em competições.','',
+  '7. MULTAS E INFRAÇÕES. As multas e infrações do período da locação são de responsabilidade do locatário, e o locador poderá indicá-lo como condutor infrator.','',
+  '8. MANUTENÇÃO E DEFEITOS. O locatário deve zelar pela motocicleta, verificar óleo e pneus e avisar o locador imediatamente sobre qualquer defeito. Revisões e trocas programadas seguem o combinado entre as partes.','',
+  '9. ACIDENTE, ROUBO E FURTO. Em caso de acidente, roubo ou furto, o locatário deve avisar o locador na hora e registrar boletim de ocorrência. Danos causados por mau uso ou culpa do locatário são de sua responsabilidade.','',
+  '10. RASTREAMENTO. A motocicleta pode ter rastreador GPS instalado, e o locatário está ciente disso.','',
+  '11. DEVOLUÇÃO. Na data combinada, o locatário devolve a motocicleta limpa, com chave e documentos, e é feita a vistoria de devolução com fotos. A devolução em atraso gera cobrança proporcional ao valor da locação.','',
+  '12. FORO. Fica eleito o foro da comarca do locador para resolver conflitos deste termo.','',
+  'Locador: ______________________      Locatário: {cliente}','Data: {hoje}'
+].join('\n');
+function termoTexto(l){
+  var c=cliente(l.clienteId)||S.meu||{},m=moto(l.motoId)||{},cfg=S.termo||{};
+  var tpl=cfg.texto||TERMO_PADRAO,loc=cfg.locador||(S.pix&&S.pix.nome)||'o locador';
+  var map={locador:loc,cliente:c.nome||'',cnh:c.cnh||'',cpf:c.cpf?fmtCpf(c.cpf):'não informado',rg:c.rg||'não informado',endereco:endTexto(c)||'não informado',telefone:c.telefone||'',moto:m.modelo||'',placa:fmtPlaca(m.placa),cor:m.cor||'',ano:m.ano||'',valorSemanal:brl(l.valorSemanal||0),diaPagamento:DIAS[+l.diaPag||1]||'',inicio:fmtD(l.inicio),devolucao:fmtD(l.fim),caucao:brl(l.caucao||0),hoje:fmtD(today())};
+  return tpl.replace(/\{(\w+)\}/g,function(x,k){return map[k]!==undefined?map[k]:x});
+}
+function formTermo(l,admin){
+  openSheet({
+    title:'Termo de locação',submitLabel:'Salvar aceite',
+    body:'<label>Texto<textarea id="f-termo" rows="14" readonly>'+esc(termoTexto(l))+'</textarea></label>'+
+      '<div><button type="button" class="btn sm" data-act="copiar" data-alvo="f-termo">Copiar texto</button></div>'+
+      (admin?'<label>Aceite do cliente em<input id="f-aceite" name="aceiteEm" type="date" value="'+esc(l.aceiteEm||'')+'"></label><p class="nota">Preencha com a data em que o cliente leu e concordou, pessoalmente ou por mensagem. Deixe em branco se ainda não aceitou.</p>':
+        '<p class="resumo">'+(l.aceiteEm?'Aceito em '+fmtD(l.aceiteEm):(l.status==='ativa'?'Aguardando o aceite combinado com o dono.':'Sem aceite registrado.'))+'</p>'),
+    onSubmit:admin?function(fd){return store.update('locacoes',l.id,{aceiteEm:fd.aceiteEm||''}).then(function(){toast('Aceite atualizado')})}:null
+  });
+}
+function formModeloTermo(){
+  var cfg=S.termo||{};
+  openSheet({
+    title:'Modelo do termo',
+    body:'<label>Nome do locador<input id="f-loc" name="locador" autocomplete="off" placeholder="Seu nome ou o da empresa" value="'+esc(cfg.locador||(S.pix&&S.pix.nome)||'')+'"></label>'+
+      '<label>Texto do termo<textarea id="f-ttexto" name="texto" rows="14">'+esc(cfg.texto||TERMO_PADRAO)+'</textarea></label>'+
+      '<div><button type="button" class="btn sm" data-act="termoPadrao">Restaurar modelo padrão</button></div>'+
+      '<p class="nota">Campos automáticos: {locador} {cliente} {cpf} {rg} {endereco} {cnh} {telefone} {moto} {placa} {cor} {ano} {valorSemanal} {diaPagamento} {inicio} {devolucao} {caucao} {hoje}. Este é um modelo geral. Peça a um advogado para revisar antes de usar com clientes.</p>',
+    onSubmit:function(fd){
+      var texto=(fd.texto||'').trim();if(texto.length<50)return 'O termo está curto demais.';
+      return store.set('config','termo',{locador:(fd.locador||'').trim(),texto:texto}).then(function(){toast('Modelo salvo')});
+    }
+  });
+}
+
+/* ---------- vistoria com fotos ---------- */
+var COMB={cheio:'Cheio','3/4':'3/4','1/2':'1/2','1/4':'1/4',reserva:'Reserva'};
+var vistoriaDe=function(locId,tipo){return S.vistorias.find(function(v){return v.locacaoId===locId&&v.tipo===tipo})};
+var fotosPath=function(vid){return 'vistorias/'+vid+'/fotos'};
+function docPills(l){
+  var ve=vistoriaDe(l.id,'entrega'),vd=vistoriaDe(l.id,'devolucao');
+  return '<div class="loc-pay"><span class="pill '+(l.aceiteEm?'ok':'warn')+'">Termo '+(l.aceiteEm?'aceito':'sem aceite')+'</span><span class="pill '+(ve?'ok':'warn')+'">Entrega '+(ve?'vistoriada':'sem vistoria')+'</span>'+
+    (l.status!=='ativa'?'<span class="pill '+(vd?'ok':'warn')+'">Devolução '+(vd?'vistoriada':'sem vistoria')+'</span>':'')+'</div>';
+}
+/* reduz a foto para caber no banco: lado maior de até 900 px, JPEG, no máximo ~110 mil caracteres */
+function resizeFoto(file){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onerror=function(){rej(new Error('leitura'))};
+    fr.onload=function(){
+      var img=new Image();
+      img.onerror=function(){rej(new Error('imagem'))};
+      img.onload=function(){
+        var lados=[900,720,560],qs=[0.6,0.5,0.4],out=null;
+        for(var i=0;i<lados.length&&!out;i++){
+          var k=Math.min(1,lados[i]/Math.max(img.width,img.height)),cv=document.createElement('canvas');
+          cv.width=Math.max(1,Math.round(img.width*k));cv.height=Math.max(1,Math.round(img.height*k));
+          cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+          for(var j=0;j<qs.length;j++){var d=cv.toDataURL('image/jpeg',qs[j]);if(d.length<=110000){out=d;break}}
+        }
+        out?res(out):rej(new Error('grande'));
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function formVistorias(l){
+  var linha=function(tipo,rot){
+    var v=vistoriaDe(l.id,tipo);
+    return '<div class="aviso"><span><b>'+rot+'</b><br>'+(v?fmtD(v.data)+' · '+num(v.km)+' km · '+plural(v.nFotos||0,'foto','fotos'):'Ainda não registrada')+'</span><button type="button" class="btn sm'+(v?'':' primary')+'" data-act="vistoria" data-id="'+esc(l.id)+'" data-tipo="'+tipo+'">'+(v?'Abrir':'Registrar')+'</button></div>';
+  };
+  openSheet({title:'Vistorias',body:linha('entrega','Entrega da moto')+linha('devolucao','Devolução da moto')});
+}
+function formVistoria(l,tipo){
+  var m=moto(l.motoId)||{},ex=vistoriaDe(l.id,tipo),vid='v-'+l.id+'-'+tipo,rot=tipo==='entrega'?'entrega':'devolução';
+  var fotos=[],novas=[],MAX=8;
+  var kmIni=ex?ex.km:(tipo==='devolucao'&&l.kmFinal!=null?l.kmFinal:(m.km||0));
+  openSheet({
+    title:'Vistoria de '+rot,submitLabel:'Salvar vistoria',
+    body:'<div class="row2"><label>Data<input id="f-vdata" name="data" type="date" required value="'+esc(ex?ex.data:today())+'"></label>'+
+      '<label>Km da moto<input id="f-vkm" name="km" type="number" inputmode="numeric" min="0" required value="'+esc(kmIni)+'"></label></div>'+
+      '<label>Combustível<select id="f-vcomb" name="combustivel">'+Object.keys(COMB).map(function(k){return '<option value="'+k+'"'+((ex?ex.combustivel:'cheio')===k?' selected':'')+'>'+COMB[k]+'</option>'}).join('')+'</select></label>'+
+      '<label>Avarias e observações<input id="f-vobs" name="obs" autocomplete="off" placeholder="Riscos, amassados, itens que faltam" value="'+esc(ex?ex.obs:'')+'"></label>'+
+      '<div style="display:grid;gap:8px"><p class="eyebrow" style="margin:0">Fotos <span id="fcount"></span></p><div id="fgrid" class="fgrid"></div>'+
+      '<label class="btn sm filebtn">Adicionar fotos<input id="f-fotos" type="file" accept="image/*" multiple></label></div>'+
+      '<p class="nota">Fotografe frente, traseira, laterais, painel e qualquer avaria. Cada foto é reduzida para economizar espaço.</p>',
+    onSubmit:function(fd){
+      var total=fotos.length+novas.length;
+      var doc={locacaoId:l.id,clienteId:l.clienteId,motoId:l.motoId,tipo:tipo,data:fd.data,km:+fd.km||0,combustivel:fd.combustivel,obs:(fd.obs||'').trim(),nFotos:total,atualizadoEm:today()};
+      var base=Date.now();
+      var jobs=novas.map(function(d,i){return function(){return store.set(fotosPath(vid),newId(),{dataUrl:d,ordem:base+i,criadoEm:today()})}});
+      return jobs.reduce(function(p,j){return p.then(j)},store.set('vistorias',vid,doc))
+        .then(function(){var cur=moto(l.motoId);return cur&&doc.km>(cur.km||0)?store.update('motos',cur.id,{km:doc.km}):null})
+        .then(function(){toast('Vistoria salva')});
+    }
+  });
+  var grid=$('#fgrid');
+  var pintar=function(){
+    grid.innerHTML=fotos.map(function(f){return '<figure><img alt="Foto da vistoria" src="'+esc(f.dataUrl)+'"><button type="button" data-kind="salva" data-foto="'+esc(f.id)+'">Excluir</button></figure>'}).join('')+
+      novas.map(function(d,i){return '<figure><img alt="Foto nova" src="'+esc(d)+'"><button type="button" data-kind="nova" data-foto="'+i+'">Remover</button></figure>'}).join('');
+    $('#fcount').textContent='('+(fotos.length+novas.length)+' de '+MAX+')';
+  };
+  grid.addEventListener('click',function(e){
+    var b=e.target.closest('[data-foto]'),img=e.target.closest('img');
+    if(b){
+      if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmar?';return}
+      if(b.dataset.kind==='nova'){novas.splice(+b.dataset.foto,1);pintar();return}
+      var fid=b.dataset.foto;
+      store.del(fotosPath(vid),fid).then(function(){fotos=fotos.filter(function(x){return x.id!==fid});pintar();return ex?store.update('vistorias',vid,{nFotos:fotos.length+novas.length}):null}).catch(function(){toast('Não foi possível excluir a foto.')});
+    }else if(img){img.closest('figure').classList.toggle('big')}
+  });
+  $('#f-fotos').addEventListener('change',function(e){
+    var files=Array.prototype.slice.call(e.target.files||[]);e.target.value='';
+    var livre=Math.max(0,MAX-fotos.length-novas.length),take=files.slice(0,livre);
+    if(files.length>take.length)toast('Limite de '+MAX+' fotos por vistoria.');
+    take.reduce(function(p,f){return p.then(function(){return resizeFoto(f).then(function(d){novas.push(d);pintar()},function(){toast('Não foi possível usar uma das fotos.')})})},Promise.resolve());
+  });
+  pintar();
+  if(ex)store.list(fotosPath(vid)).then(function(l2){fotos=l2.sort(function(a,b){return (a.ordem||0)-(b.ordem||0)});pintar()}).catch(function(){toast('Não foi possível carregar as fotos.')});
+}
+function verVist(v){
+  var rot=v.tipo==='entrega'?'entrega':'devolução';
+  openSheet({
+    title:'Vistoria de '+rot,
+    body:'<p class="resumo">'+fmtD(v.data)+' · '+num(v.km)+' km · combustível '+esc(COMB[v.combustivel]||'—')+'</p>'+(v.obs?'<p class="nota">'+esc(v.obs)+'</p>':'')+
+      '<div id="fgrid" class="fgrid"></div><p class="nota" id="fvazio">Carregando as fotos…</p>'
+  });
+  var grid=$('#fgrid');
+  grid.addEventListener('click',function(e){var img=e.target.closest('img');if(img)img.closest('figure').classList.toggle('big')});
+  store.list(fotosPath(v.id)).then(function(l){
+    l.sort(function(a,b){return (a.ordem||0)-(b.ordem||0)});
+    grid.innerHTML=l.map(function(f){return '<figure><img alt="Foto da vistoria" src="'+esc(f.dataUrl)+'"></figure>'}).join('');
+    $('#fvazio').textContent=l.length?'Toque numa foto para ampliar.':'Sem fotos nesta vistoria.';
+  }).catch(function(){$('#fvazio').textContent='Não foi possível carregar as fotos.'});
+}
+
+/* ---------- acesso dos clientes (criado pelo administrador) ---------- */
+function slugUser(nome){
+  var p=String(nome||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().split(/\s+/).filter(Boolean);
+  var u=p.length>1?p[0]+'.'+p[p.length-1]:(p[0]||'');
+  return u.replace(/[^a-z0-9._-]/g,'');
+}
+var acessoDe=function(cid){return S.acessos.find(function(a){return a.clienteId===cid})};
+function genSenha(){
+  var al='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789',a=new Uint8Array(8),o='';
+  crypto.getRandomValues(a);
+  for(var i=0;i<a.length;i++)o+=al[a[i]%al.length];
+  return o;
+}
+function acessoBlock(c){
+  var a=acessoDe(c.id);
+  return '<hr class="hr"><div class="acesso"><p class="eyebrow">Acesso ao app</p>'+(a?
+    '<p class="nota">Usuário <b>'+esc(a.usuario)+'</b>. O cliente vê só o contrato, a moto e os pagamentos dele.</p><div class="row"><button type="button" class="btn sm" data-act="acessoSenha" data-id="'+esc(c.id)+'">Nova senha</button><button type="button" class="btn sm danger" data-act="acessoDel" data-id="'+esc(c.id)+'">Remover acesso</button></div>':
+    '<p class="nota">Este cliente ainda não tem acesso. Crie um usuário e uma senha para ele ver o próprio contrato.</p><div class="row"><button type="button" class="btn sm" data-act="acessoNovo" data-id="'+esc(c.id)+'">Criar acesso do cliente</button></div>')+'</div>';
+}
+function formAcesso(c){
+  var ex=acessoDe(c.id),novo=!ex;
+  openSheet({
+    title:novo?'Criar acesso do cliente':'Nova senha do cliente',
+    submitLabel:novo?'Criar acesso':'Salvar senha',
+    body:'<p class="nota">'+esc(c.nome)+' vai ver só o contrato, a moto e os pagamentos dele.</p>'+
+      '<label>Usuário<input id="f-user" name="usuario" required autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="30" value="'+esc(novo?slugUser(c.nome):ex.usuario)+'"'+(novo?'':' readonly')+'></label>'+
+      '<label>Senha<span class="pw"><input id="f-pw" name="senha" required minlength="6" autocomplete="off" spellcheck="false" value="'+esc(genSenha())+'"><button type="button" class="btn sm" data-act="gerarSenha">Gerar</button></span></label>'+
+      '<p class="nota">Na próxima tela você copia os dados para enviar ao cliente. A senha não fica guardada e não dá para ver de novo. Se ele esquecer, você cria outra.</p>',
+    onSubmit:function(fd){
+      var u=(fd.usuario||'').trim().toLowerCase(),pw=fd.senha||'';
+      if(!/^[a-z0-9._-]{3,30}$/.test(u))return 'Usuário: use de 3 a 30 letras minúsculas, números, ponto, hífen ou sublinhado.';
+      if(pw.length<6)return 'A senha precisa ter pelo menos 6 caracteres.';
+      return store.query('acessos','usuario',u).then(function(l){
+        if(l.some(function(a){return a.clienteId!==c.id}))return 'Esse usuário já está em uso por outro cliente.';
+        if(SB)return acessoSupa(c,u,pw,novo,ex);
+        var salt=randHex(16);
+        return derive(u,pw,salt,AUTH.iter).then(function(h){
+          var w=novo?store.set('acessos','a-'+c.id,{clienteId:c.id,usuario:u,salt:salt,iter:AUTH.iter,hash:h,ativo:true,criadoEm:today()}):store.update('acessos','a-'+c.id,{salt:salt,iter:AUTH.iter,hash:h,ativo:true});
+          return w.then(function(){setTimeout(function(){mostrarAcesso(c,u,pw)},0)});
+        });
+      });
+    }
+  });
+}
+var emailDe=function(u){var b=EMAIL_BASE.split('@');return b[0]+'+'+String(u).trim().toLowerCase()+'@'+b[1]};
+async function acessoSupa(c,u,pw,novo,ex){
+  try{
+    if(!novo){
+      if(!ex||!ex.userId)return 'Acesso sem usuário vinculado. Remova o acesso e crie de novo.';
+      var r0=await SB.rpc('admin_set_password',{p_user:ex.userId,p_password:pw});
+      if(r0.error)throw r0.error;
+    }else{
+      var tmp=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,storageKey:'giromoto-tmp'}});
+      var r=await tmp.auth.signUp({email:emailDe(u),password:pw});
+      if(r.error){
+        if(/registered|exists/i.test(r.error.message||''))return 'Esse usuário já existe no sistema.';
+        if(/password/i.test(r.error.message||''))return 'Senha recusada: use pelo menos 6 caracteres.';
+        if(/rate|too many|limit/i.test(r.error.message||''))return 'O Supabase limitou o envio de e-mails. Desligue "Confirm email" em Authentication > Sign In / Providers > Email e tente de novo.';
+        return 'Não foi possível criar o login ('+(r.error.message||'erro')+').';
+      }
+      var uid=r.data&&r.data.user&&r.data.user.id;
+      if(!uid)throw new Error('sem id');
+      if(Array.isArray(r.data.user.identities)&&!r.data.user.identities.length)return 'Esse usuário já existe no sistema.';
+      var rp=await SB.from('profiles').insert({user_id:uid,role:'cliente',cliente_id:c.id});
+      if(rp.error)throw rp.error;
+      if(!r.data.session){var rc=await SB.rpc('admin_set_password',{p_user:uid,p_password:pw});if(rc.error)throw rc.error}
+      await store.set('acessos','a-'+c.id,{clienteId:c.id,usuario:u,userId:uid,ativo:true,criadoEm:today()});
+    }
+    setTimeout(function(){mostrarAcesso(c,u,pw)},0);
+  }catch(e){return 'Não foi possível salvar o acesso ('+((e&&e.message)||'erro')+').'}
+}
+async function removerAcesso(cid){
+  var a=await store.getDoc('acessos','a-'+cid);
+  if(!a)return;
+  if(SB&&a.userId){var r=await SB.rpc('admin_delete_user',{p_user:a.userId});if(r.error)throw r.error}
+  await store.del('acessos','a-'+cid);
+}
+async function exportarBackup(){
+  var out={app:'Giro Moto',geradoEm:new Date().toISOString(),dados:{},fotos:{}};
+  var cols=['motos','clientes','locacoes','pagamentos','config','vistorias','manutencoes','acessos','ocorrencias'];
+  for(var i=0;i<cols.length;i++)out.dados[cols[i]]=await store.list(cols[i]);
+  for(var j=0;j<out.dados.vistorias.length;j++){var v=out.dados.vistorias[j];out.fotos[v.id]=await store.list(fotosPath(v.id))}
+  var blob=new Blob([JSON.stringify(out)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='giro-moto-backup-'+today()+'.json';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href)},4000);
+}
+function mostrarAcesso(c,u,pw){
+  var txt='Giro Moto\nUsuário: '+u+'\nSenha: '+pw;
+  openSheet({
+    title:'Acesso pronto',
+    body:'<p class="nota">Envie estes dados para '+esc(c.nome)+', junto com o link do app. A senha não será mostrada de novo.</p>'+
+      '<label>Dados de acesso<textarea id="f-cred" rows="3" readonly>'+esc(txt)+'</textarea></label>'+
+      '<div><button type="button" class="btn sm" data-act="copiar" data-alvo="f-cred">Copiar dados</button></div>'
+  });
+}
+
+/* ---------- telas ---------- */
+function cnhInfo(c){
+  if(!c.cnhValidade)return ['warn','Sem validade'];
+  var d=diff(today(),c.cnhValidade);
+  if(d<0)return ['bad','Vencida'];
+  if(d<=30)return ['warn','Vence em '+d+'d'];
+  return ['ok','Válida'];
+}
+function resultadoMotos(){
+  if(!S.motos.length)return '<p class="nota">Cadastre motos para ver o resultado.</p>';
+  var locMoto={},rec={},cus={};
+  S.locacoes.forEach(function(l){locMoto[l.id]=l.motoId});
+  S.pagamentos.forEach(function(p){var m=locMoto[p.locacaoId];if(m)rec[m]=(rec[m]||0)+(+p.valor||0)});
+  S.manutencoes.forEach(function(r){cus[r.motoId]=(cus[r.motoId]||0)+(+r.custo||0)});
+  var L=S.motos.map(function(m){var r=r2(rec[m.id]||0),c=r2(cus[m.id]||0);return {m:m,r:r,c:c,res:r2(r-c)}}).sort(function(a,b){return b.res-a.res});
+  var tr=r2(L.reduce(function(s,x){return s+x.r},0)),tc=r2(L.reduce(function(s,x){return s+x.c},0));
+  return '<p class="nota">Receita recebida menos manutenção lançada, desde o início.</p><ul class="pg-list ro">'+L.map(function(x){
+    var ret=x.m.compra>0?' · recuperou '+Math.round(x.res/x.m.compra*100)+'% do valor de compra':'';
+    return '<li><span>'+esc(x.m.modelo)+' · '+esc(fmtPlaca(x.m.placa))+'<small>Receita '+brl(x.r)+' · manutenção '+brl(x.c)+ret+'</small></span><b>'+brl(x.res)+'</b></li>';
+  }).join('')+'<li><span>Total da frota<small>Receita '+brl(tr)+' · manutenção '+brl(tc)+'</small></span><b>'+brl(r2(tr-tc))+'</b></li></ul>';
+}
+function vPainel(){
+  var t=today(),c={disponivel:0,alugada:0,manutencao:0};
+  S.motos.forEach(function(m){if(c[m.status]!==undefined)c[m.status]++});
+  var total=S.motos.length,alerts=[];
+  S.locacoes.filter(function(l){return l.status==='ativa'}).forEach(function(l){
+    var d=diff(t,l.fim),m=moto(l.motoId),cl=cliente(l.clienteId),who=(m?m.modelo:'Moto removida')+' · '+(cl?cl.nome:'cliente removido');
+    if(d<0)alerts.push({n:0,lv:'bad',tag:'Atrasada',t:'Devolução atrasada há '+plural(-d,'dia','dias'),s:who,tab:'locacoes'});
+    else if(d===0)alerts.push({n:1,lv:'warn',tag:'Hoje',t:'Devolução prevista para hoje',s:who,tab:'locacoes'});
+    else if(d<=2)alerts.push({n:2,lv:'warn',tag:'Em breve',t:'Devolução em '+plural(d,'dia','dias'),s:who,tab:'locacoes'});
+  });
+  S.clientes.forEach(function(cl){
+    if(!cl.cnhValidade)return;var d=diff(t,cl.cnhValidade);
+    if(d<0)alerts.push({n:0,lv:'bad',tag:'CNH',t:'CNH vencida',s:cl.nome+' · venceu em '+fmtD(cl.cnhValidade),tab:'clientes'});
+    else if(d<=30)alerts.push({n:3,lv:'warn',tag:'CNH',t:'CNH vence em '+plural(d,'dia','dias'),s:cl.nome+' · '+fmtD(cl.cnhValidade),tab:'clientes'});
+  });
+  var aReceber=0;
+  S.locacoes.forEach(function(l){
+    var sd=saldo(l);if(sd>0)aReceber+=sd;
+    var m=moto(l.motoId),cl=cliente(l.clienteId),who=(m?m.modelo:'Moto removida')+' · '+(cl?cl.nome:'cliente removido');
+    if(l.status!=='ativa'){
+      if(sd>0)alerts.push({n:1,lv:'bad',tag:'Pagamento',t:'Saldo de '+brl(sd)+' em aberto',s:who+' · locação encerrada',tab:'locacoes',loc:'encerradas'});
+    }else{
+      var at=atraso(l);
+      if(at>0)alerts.push({n:1,lv:'bad',tag:'Pagamento',t:'Pagamento atrasado: '+brl(at),s:who,tab:'locacoes',loc:'ativas'});
+      else if(sd>0)alerts.push({n:2,lv:'warn',tag:'Hoje',t:'Cobrança de hoje: '+brl(sd),s:who,tab:'locacoes',loc:'ativas'});
+    }
+  });
+  S.motos.forEach(function(m){manutInfo(m).forEach(function(i){alerts.push({n:i.lv==='bad'?0:3,lv:i.lv,tag:i.k==='doc'?'Documento':'Manutenção',t:i.t,s:m.modelo+' · '+fmtPlaca(m.placa),tab:'motos'})})});
+  S.locacoes.forEach(function(l){
+    if(l.arquivada)return;
+    var m=moto(l.motoId),cl=cliente(l.clienteId),who=(m?m.modelo:'Moto removida')+' · '+(cl?cl.nome:'cliente removido');
+    if(l.status==='ativa'){
+      if(!vistoriaDe(l.id,'entrega'))alerts.push({n:2,lv:'warn',tag:'Vistoria',t:'Vistoria de entrega pendente',s:who,tab:'locacoes',loc:'ativas'});
+      if(!l.aceiteEm)alerts.push({n:2,lv:'warn',tag:'Termo',t:'Termo sem aceite do cliente',s:who,tab:'locacoes',loc:'ativas'});
+    }else if(l.encerradaEm&&diff(l.encerradaEm,t)<=30&&!vistoriaDe(l.id,'devolucao')){
+      alerts.push({n:3,lv:'warn',tag:'Vistoria',t:'Vistoria de devolução pendente',s:who,tab:'locacoes',loc:'encerradas'});
+    }
+  });
+  alerts.sort(function(a,b){return a.n-b.n});
+  var ms=t.slice(0,8)+'01',recebido=r2(S.pagamentos.filter(function(p){return p.data>=ms}).reduce(function(s,p){return s+(+p.valor||0)},0));
+  var mes=parse(t).toLocaleDateString('pt-BR',{month:'long'});
+  var custoMes=r2(S.manutencoes.filter(function(r){return r.data>=ms}).reduce(function(s,r){return s+(+r.custo||0)},0));
+  var ocup=total?Math.round(c.alugada/total*100):0;
+  var temEx=S.motos.concat(S.clientes,S.locacoes,S.pagamentos,S.acessos,S.vistorias,S.manutencoes,S.ocorrencias).some(function(x){return x.exemplo});
+  var prox=S.locacoes.filter(function(l){return proxVenc(l)}).map(function(l){return {l:l,d:proxVenc(l)}}).sort(function(a,b){return a.d.localeCompare(b.d)});
+  var proximas=prox.length?'<section><h2>Próximas cobranças</h2>'+prox.map(function(x){
+    var m=moto(x.l.motoId),cl=cliente(x.l.clienteId),hj=x.d===t;
+    return '<button class="alert" data-act="pagamentos" data-id="'+esc(x.l.id)+'"><span class="pill '+(hj?'warn':'info')+'">'+(hj?'Hoje':wd(x.d)+' '+fmtShort(x.d))+'</span><span class="tx"><strong>'+esc(cl?cl.nome:'Cliente removido')+' · '+brl(x.l.valorSemanal)+'</strong><small>'+esc(m?m.modelo+' · '+fmtPlaca(m.placa):'Moto removida')+'</small></span></button>';
+  }).join('')+'</section>':'';
+  var seg=function(k,cls){return c[k]?'<i class="'+cls+'" style="flex:'+c[k]+'" title="'+ST[k]+'"></i>':''};
+  return (temEx?'<div class="aviso"><span>Você está vendo dados de exemplo.</span><button class="btn sm" data-act="removerExemplos">Remover exemplos</button></div>':'')+
+    '<section><div><p class="eyebrow">'+esc(parse(t).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}))+'</p><h2>Frota hoje</h2></div>'+
+    (total?'<div class="bar" role="img" aria-label="'+c.disponivel+' disponíveis, '+c.alugada+' alugadas, '+c.manutencao+' em manutenção">'+seg('disponivel','s-ok')+seg('alugada','s-info')+seg('manutencao','s-warn')+'</div>'+
+    '<div class="counts"><div class="c-ok"><b>'+c.disponivel+'</b><span>Disponíveis</span></div><div class="c-info"><b>'+c.alugada+'</b><span>Alugadas</span></div><div class="c-warn"><b>'+c.manutencao+'</b><span>Manutenção</span></div></div>'
+    :'<div class="empty"><span>Nenhuma moto cadastrada ainda.</span><button class="btn primary" data-act="novaMoto">Cadastrar a primeira moto</button></div>')+'</section>'+
+    '<section><h2>Atenção'+(alerts.length?'<small>'+alerts.length+'</small>':'')+'</h2>'+
+    (alerts.length?alerts.map(function(a){return '<button class="alert" data-act="tab" data-tab="'+a.tab+'"'+(a.loc?' data-v="'+a.loc+'"':'')+'><span class="pill '+a.lv+'">'+esc(a.tag)+'</span><span class="tx"><strong>'+esc(a.t)+'</strong><small>'+esc(a.s)+'</small></span></button>'}).join(''):'<p class="muted" style="margin:0">Nada pendente: sem atrasos e sem CNH perto de vencer.</p>')+'</section>'+
+    proximas+'<section><h2>Financeiro</h2><div class="kpis"><div><span>Recebido em '+esc(mes)+'</span><b>'+brl(recebido)+'</b></div><div><span>A receber (vencido)</span><b>'+brl(aReceber)+'</b></div><div><span>Ocupação da frota</span><b>'+ocup+'%</b></div><div><span>Manutenção em '+esc(mes)+'</span><b>'+brl(custoMes)+'</b></div></div></section>'+
+    '<section><h2>Resultado por moto</h2>'+resultadoMotos()+'</section>'+
+    '<section><h2>WhatsApp do negócio</h2><div class="aviso"><span>'+(S.contato&&waNum(S.contato.whatsapp)?'Clientes falam com você em '+esc(S.contato.whatsapp)+'.':'Cadastre seu número para o cliente poder te chamar pelo app.')+'</span><button class="btn sm" data-act="cfgContato">'+(S.contato&&S.contato.whatsapp?'Editar':'Cadastrar')+'</button></div></section>'+
+    '<section><h2>Encargos por atraso</h2><div class="aviso"><span>Multa '+cobr().multaPct+'% · juros '+cobr().jurosMesPct+'% ao mês. Você lança o valor em Locações → Ocorrências.</span><button class="btn sm" data-act="cfgCobr">Editar</button></div></section>'+
+    '<section><h2>Recebimento por Pix</h2><div class="aviso"><span>'+(S.pix?'Chave …'+esc(String(S.pix.chave).slice(-4))+' · '+esc(S.pix.nome):'Cadastre sua chave Pix para gerar cobranças com o valor da locação.')+'</span><button class="btn sm" data-act="cfgPix">'+(S.pix?'Alterar':'Configurar Pix')+'</button></div></section>'+
+    (SB?'<section><h2>Backup dos dados</h2><div class="aviso"><span>Baixe uma cópia de tudo (motos, clientes, contratos, pagamentos e fotos).</span><button class="btn sm" data-act="backup">Baixar backup</button></div></section>':'')+'<section><h2>Termo de locação</h2><div class="aviso"><span>'+(S.termo?'Modelo próprio salvo.':'Usando o modelo padrão. Revise o texto antes de usar com clientes.')+'</span><button class="btn sm" data-act="modeloTermo">Editar modelo</button></div></section>';
+}
+function motosList(){
+  var q=S.q.motos.trim().toLowerCase(),L=S.motos.slice().sort(function(a,b){return a.modelo.localeCompare(b.modelo,'pt-BR')});
+  if(S.filtro!=='todas')L=L.filter(function(m){return m.status===S.filtro});
+  if(q)L=L.filter(function(m){return (m.modelo+' '+m.placa+' '+fmtPlaca(m.placa)+' '+m.cor).toLowerCase().indexOf(q)>-1});
+  if(!L.length)return '<div class="empty"><span>'+(S.motos.length?'Nenhuma moto encontrada.':'Nenhuma moto cadastrada.')+'</span>'+(S.motos.length?'':'<button class="btn primary" data-act="novaMoto">Cadastrar moto</button>')+'</div>';
+  return L.map(function(m){
+    var l=locAtiva(m.id),cl=l&&cliente(l.clienteId);
+    return '<button class="card moto" data-act="editMoto" data-id="'+esc(m.id)+'">'+plate(m.placa)+
+      '<span class="tx"><strong>'+esc(m.modelo)+'</strong><span class="sub"><i class="dot" style="background:'+corHex(m.cor)+'"></i>'+esc(m.cor)+(m.ano?' · '+esc(m.ano):'')+' · '+num(m.km)+' km</span>'+
+      (l?'<span class="sub">com '+esc(cl?cl.nome:'cliente removido')+' · devolve '+fmtShort(l.fim)+'</span>':'')+manutLinha(m)+'</span>'+
+      '<span class="right"><span class="pill '+STC[m.status]+'">'+(ST[m.status]||esc(m.status))+'</span><small>'+brl(semanalDe(m))+'/semana</small></span></button>';
+  }).join('');
+}
+function vMotos(){
+  var f=[['todas','Todas'],['disponivel','Disponíveis'],['alugada','Alugadas'],['manutencao','Manutenção']];
+  return '<div class="toolbar"><input id="q" type="search" placeholder="Buscar modelo, placa ou cor" aria-label="Buscar moto" value="'+esc(S.q.motos)+'"><button class="btn primary" data-act="novaMoto">+ Nova moto</button></div>'+
+    '<div class="chips">'+f.map(function(x){return '<button class="chip'+(S.filtro===x[0]?' on':'')+'" data-act="filtro" data-v="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</div>'+
+    '<div class="cards" id="lista">'+motosList()+'</div>';
+}
+function clientesList(){
+  var q=S.q.clientes.trim().toLowerCase(),L=S.clientes.slice().sort(function(a,b){return a.nome.localeCompare(b.nome,'pt-BR')});
+  if(q)L=L.filter(function(c){return (c.nome+' '+(c.telefone||'')+' '+(c.cnh||'')+' '+(c.cpf||'')+' '+fmtCpf(c.cpf)).toLowerCase().indexOf(q)>-1});
+  if(!L.length)return '<div class="empty"><span>'+(S.clientes.length?'Nenhum cliente encontrado.':'Nenhum cliente cadastrado.')+'</span>'+(S.clientes.length?'':'<button class="btn primary" data-act="novoCliente">Cadastrar cliente</button>')+'</div>';
+  return L.map(function(c){
+    var i=cnhInfo(c),n=S.locacoes.filter(function(l){return l.clienteId===c.id&&l.status==='ativa'}).length;
+    var ini=c.nome.split(/\s+/).filter(Boolean).slice(0,2).map(function(p){return p[0]}).join('').toUpperCase();
+    return '<button class="card cli" data-act="editCliente" data-id="'+esc(c.id)+'"><span class="ava" aria-hidden="true">'+esc(ini)+'</span>'+
+      '<span class="tx"><strong>'+esc(c.nome)+'</strong><span class="sub">'+esc(c.telefone||'sem telefone')+'</span><span class="sub">CNH '+esc(c.cnh||'—')+' · até '+fmtD(c.cnhValidade)+'</span><span class="sub">'+(acessoDe(c.id)?'App: '+esc(acessoDe(c.id).usuario):'Sem acesso ao app')+'</span></span>'+
+      '<span class="right"><span class="pill '+i[0]+'">'+i[1]+'</span><small>'+(n?plural(n,'locação ativa','locações ativas'):'sem locação ativa')+'</small></span></button>';
+  }).join('');
+}
+function vClientes(){
+  return '<div class="toolbar"><input id="q" type="search" placeholder="Buscar nome, telefone, CPF ou CNH" aria-label="Buscar cliente" value="'+esc(S.q.clientes)+'"><button class="btn primary" data-act="novoCliente">+ Novo cliente</button></div>'+
+    '<div class="cards" id="lista">'+clientesList()+'</div>';
+}
+function locCard(l){
+  var m=moto(l.motoId)||{modelo:'Moto removida',placa:''},c=cliente(l.clienteId),ativa=l.status==='ativa',t=today(),pill;
+  if(ativa){var d=diff(t,l.fim);pill=d<0?['bad','Atrasada '+(-d)+'d']:d===0?['warn','Devolve hoje']:d<=2?['warn','Devolve em '+d+'d']:['info','Devolve '+fmtShort(l.fim)]}
+  else pill=['ok','Encerrada'];
+  var fim=ativa?l.fim:l.encerradaEm,tot=cobrado(l),pg=pago(l.id),sd=r2(tot-pg);
+  var at=atraso(l),px=proxVenc(l);
+  var pp=!ativa?(sd>0?['bad','Saldo '+brl(sd)]:['ok','Quitado']):at>0?['bad','Atrasado '+brl(at)]:sd>0?['warn','Vence hoje '+brl(sd)]:['ok','Em dia'];
+  return '<article class="card loc"><div class="loc-top">'+plate(m.placa)+'<span class="tx"><strong>'+esc(m.modelo)+'</strong><span class="sub">'+esc(c?c.nome:'Cliente removido')+'</span></span><span class="pill '+pill[0]+'">'+esc(pill[1])+'</span></div>'+
+    '<dl class="loc-meta"><div><dt>Período</dt><dd>'+fmtShort(l.inicio)+' → '+fmtD(fim)+'</dd></div><div><dt>'+(l.valorSemanal?'Semanal':'Diária')+'</dt><dd>'+(l.valorSemanal?brl(l.valorSemanal)+' · toda '+DIAS[+l.diaPag||1]:brl(l.valorDiaria))+'</dd></div><div><dt>'+(ativa?'Previsto':'Total')+'</dt><dd>'+brl(ativa?previsto(l):tot)+'</dd></div></dl>'+
+    docPills(l)+
+    (!ativa&&l.caucaoDevolvida!=null?'<p class="nota">Caução '+brl(l.caucao)+': devolvido '+brl(l.caucaoDevolvida)+(l.caucaoRetida>0?' · retido '+brl(l.caucaoRetida)+(l.caucaoObs?' ('+esc(l.caucaoObs)+')':''):'')+'</p>':'')+
+    '<div class="loc-pay"><span class="pill '+pp[0]+'">'+esc(pp[1])+'</span><span class="sub">'+(ativa&&px?'Pago '+brl(pg)+' · próxima cobrança '+wd(px)+' '+fmtShort(px):'Pago '+brl(pg)+' de '+brl(tot))+'</span></div>'+
+    '<div class="loc-act"><button class="btn sm'+(sd>0&&!ativa?' primary':'')+'" data-act="pagamentos" data-id="'+esc(l.id)+'">Pagamentos</button><button class="btn sm" data-act="termo" data-id="'+esc(l.id)+'">Termo</button><button class="btn sm" data-act="vistorias" data-id="'+esc(l.id)+'">Vistorias</button><button class="btn sm" data-act="whats" data-id="'+esc(l.id)+'">WhatsApp</button><button class="btn sm" data-act="ocorr" data-id="'+esc(l.id)+'">Ocorrências'+(ocorrDe(l.id).length?' '+ocorrDe(l.id).length:'')+'</button>'+
+    (ativa?'<button class="btn sm" data-act="editLoc" data-id="'+esc(l.id)+'">Editar</button><button class="btn sm primary" data-act="encerrar" data-id="'+esc(l.id)+'">Encerrar locação</button>':
+      (l.arquivada?'<button class="btn sm" data-act="arquivarLoc" data-id="'+esc(l.id)+'" data-v="0">Desarquivar</button>':(sd<=0?'<button class="btn sm primary" data-act="arquivarLoc" data-id="'+esc(l.id)+'" data-v="1">Arquivar</button>':''))+'<button class="btn sm danger" data-act="excluirLoc" data-id="'+esc(l.id)+'">Excluir</button>')+'</div></article>';
+}
+function vLocacoes(){
+  var at=S.locacoes.filter(function(l){return l.status==='ativa'}).sort(function(a,b){return a.fim.localeCompare(b.fim)});
+  var ord=function(a,b){return (b.encerradaEm||'').localeCompare(a.encerradaEm||'')};
+  var en=S.locacoes.filter(function(l){return l.status!=='ativa'&&!l.arquivada}).sort(ord);
+  var arq=S.locacoes.filter(function(l){return l.status!=='ativa'&&l.arquivada}).sort(ord);
+  var L=S.locFiltro==='ativas'?at:S.locFiltro==='arquivadas'?arq:en;
+  return '<div class="toolbar" style="justify-content:space-between"><div class="seg"><button class="'+(S.locFiltro==='ativas'?'on':'')+'" data-act="locFiltro" data-v="ativas">Ativas '+at.length+'</button><button class="'+(S.locFiltro==='encerradas'?'on':'')+'" data-act="locFiltro" data-v="encerradas">Encerradas '+en.length+'</button>'+(arq.length||S.locFiltro==='arquivadas'?'<button class="'+(S.locFiltro==='arquivadas'?'on':'')+'" data-act="locFiltro" data-v="arquivadas">Arquivadas '+arq.length+'</button>':'')+'</div><button class="btn primary" data-act="novaLoc">+ Nova locação</button></div>'+
+    '<div class="cards">'+(L.length?L.map(locCard).join(''):'<div class="empty"><span>'+(S.locFiltro==='ativas'?'Nenhuma locação ativa.':S.locFiltro==='arquivadas'?'Nenhuma locação arquivada.':'Nenhuma locação encerrada.')+'</span></div>')+'</div>';
+}
+
+/* ---------- visão do cliente: só o contrato, a moto e os pagamentos dele ---------- */
+function custDocs(l){
+  var row=function(act,id,t,sub){return '<button class="alert" data-act="'+act+'" data-id="'+esc(id)+'"><span class="tx"><strong>'+t+'</strong><small>'+sub+'</small></span></button>'};
+  var ve=vistoriaDe(l.id,'entrega'),vd=vistoriaDe(l.id,'devolucao');
+  return '<div class="docs">'+row('verTermo',l.id,'Termo de locação',l.aceiteEm?'Aceito em '+fmtD(l.aceiteEm):(l.status==='ativa'?'Aguardando aceite':'Sem aceite registrado'))+
+    (ve?row('verVist',ve.id,'Vistoria de entrega',fmtD(ve.data)+' · '+plural(ve.nFotos||0,'foto','fotos')):'')+
+    (vd?row('verVist',vd.id,'Vistoria de devolução',fmtD(vd.data)+' · '+plural(vd.nFotos||0,'foto','fotos')):'')+'</div>';
+}
+function custWhats(l,m){
+  var num=S.contato?waNum(S.contato.whatsapp):'';
+  if(!num)return '';
+  var nome=(S.meu&&S.meu.nome)||'',moto_=m?m.modelo+(m.placa?' ('+fmtPlaca(m.placa)+')':''):'minha locação',at=atraso(l);
+  var url=function(t){return 'https://wa.me/'+num+'?text='+encodeURIComponent(t)};
+  var msg1='Olá! Aqui é '+nome+', da locação da '+moto_+'. Preciso de ajuda.';
+  var msg2='Olá! Aqui é '+nome+'. Estou enviando o comprovante do pagamento da locação da '+moto_+(at>0?', referente a '+brl(at)+' em aberto':'')+'.';
+  return '<div class="loc-act"><a class="btn" target="_blank" rel="noopener noreferrer" href="'+esc(url(msg1))+'">Falar com o dono</a><a class="btn" target="_blank" rel="noopener noreferrer" href="'+esc(url(msg2))+'">Enviar comprovante</a></div>';
+}
+/* parcelas semanais com os pagamentos abatendo as mais antigas primeiro */
+function parcelasDe(l){
+  if(!l.valorSemanal)return [];
+  var t=today(),ate=l.status==='ativa'?addDays(t,7):(l.encerradaEm||l.fim),resto=pago(l.id);
+  var due=vencs(l,ate);
+  if(l.status==='ativa'){var fut=due.filter(function(v){return v>t});if(fut.length>1)due=due.filter(function(v){return v<=t||v===fut[0]})}
+  return due.map(function(v){
+    var cob=Math.min(resto,l.valorSemanal);resto=r2(resto-cob);
+    var aberto=r2(l.valorSemanal-cob),st,dias=diff(v,t);
+    if(aberto<=0)st=['ok','Paga'];
+    else if(v<t)st=['bad','Atrasada '+plural(dias,'dia','dias')];
+    else if(v===t)st=['warn','Vence hoje'];
+    else st=['info','A vencer'];
+    return {data:v,valor:l.valorSemanal,aberto:aberto,pago:cob,st:st};
+  });
+}
+function custExtrato(l){
+  var P=parcelasDe(l);if(!P.length)return '';
+  P.reverse();
+  var li=function(p){return '<li><span>'+wd(p.data)+' '+fmtD(p.data)+'<small>'+(p.aberto>0&&p.pago>0?'pago '+brl(p.pago)+' · falta '+brl(p.aberto):brl(p.valor))+'</small></span><span class="pill '+p.st[0]+'">'+esc(p.st[1])+'</span></li>'};
+  var head=P.slice(0,6).map(li).join(''),rest=P.slice(6).map(li).join('');
+  return '<hr class="hr"><p class="eyebrow">Parcelas semanais</p><ul class="parc">'+head+'</ul>'+(rest?'<details><summary class="nota" style="cursor:pointer;margin-top:8px">Ver parcelas anteriores ('+(P.length-6)+')</summary><ul class="parc" style="margin-top:6px">'+rest+'</ul></details>':'')+
+    '<p class="nota">Os pagamentos quitam primeiro as parcelas mais antigas. Multas e ocorrências aparecem separadas.</p>';
+}
+function custResumo(l){
+  var m=moto(l.motoId),mod=m?m.modelo:'sua moto',at=atraso(l),sd=saldo(l),px=proxVenc(l),c=cobr();
+  var valorPix=at>0?at:(sd>0?sd:(l.valorSemanal||0)),cls,lbl,big,sub;
+  if(at>0){
+    var P=parcelasDe(l).filter(function(p){return p.st[0]==='bad'}),desde=P.length?P[0].data:null;
+    cls='bad';lbl='Em atraso · '+esc(mod);big=brl(at);
+    sub='Desde '+(desde?fmtD(desde):'—')+'. Se o atraso continuar, incidem multa de '+num(c.multaPct)+'% e juros de '+num(c.jurosMesPct)+'% ao mês (por dia de atraso) sobre a parcela em aberto; o dono lança esse valor e você o vê aqui.';
+  }else if(sd>0){cls='warn';lbl='Vence hoje · '+esc(mod);big=brl(sd);sub='Pague hoje para ficar em dia.'}
+  else{cls='ok';lbl='Tudo em dia · '+esc(mod);big=px?brl(l.valorSemanal):'R$ 0,00';sub=px?'Próxima cobrança: '+wd(px)+' '+fmtD(px)+'.':'Nada a pagar agora.'}
+  return '<section class="resumo-c '+cls+'"><p class="lbl">'+lbl+'</p><p class="big">'+big+'</p><p class="nota">'+sub+'</p>'+
+    (valorPix>0&&(at>0||sd>0||px)?'<button class="btn primary" data-act="pagarPix" data-id="'+esc(l.id)+'">'+(at>0||sd>0?'Pagar por Pix':'Copiar Pix da próxima parcela')+'</button>':'')+'</section>';
+}
+function caucaoCust(l,ativa){
+  if(!l.caucao)return '';
+  var t='<div><dt>Caução</dt><dd>'+brl(l.caucao)+'</dd></div>';
+  var nota=ativa?'<p class="nota">A caução de '+brl(l.caucao)+' fica com o dono e é devolvida ao fim da locação, depois de descontados danos, multas e valores em aberto.</p>'
+    :(l.caucaoDevolvida!=null?'<p class="nota">Caução de '+brl(l.caucao)+': devolvido '+brl(l.caucaoDevolvida)+(l.caucaoRetida>0?' · retido '+brl(l.caucaoRetida)+(l.caucaoObs?'. Motivo: '+esc(l.caucaoObs):''):'')+'.</p>':'');
+  return {dl:t,nota:nota};
+}
+function custLoc(l){
+  var m=moto(l.motoId),ativa=l.status==='ativa',tot=cobrado(l),pg=pago(l.id),sd=r2(tot-pg),at=atraso(l),px=proxVenc(l);
+  var pp=!ativa?(sd>0?['bad','Saldo '+brl(sd)]:['ok','Encerrada']):at>0?['bad','Atrasado '+brl(at)]:sd>0?['warn','Vence hoje '+brl(sd)]:['ok','Em dia'];
+  var valorPix=ativa?(at>0?at:(sd>0?sd:(l.valorSemanal||0))):0;
+  var hist=S.pagamentos.filter(function(p){return p.locacaoId===l.id}).sort(function(a,b){return b.data.localeCompare(a.data)});
+  return '<article class="card loc"><div class="loc-top">'+plate(m?m.placa:'')+
+    '<span class="tx"><strong>'+esc(m?m.modelo:'Carregando a moto…')+'</strong><span class="sub">'+(m?'<i class="dot" style="background:'+corHex(m.cor)+'"></i>'+esc(m.cor)+(m.ano?' · '+esc(m.ano):''):'')+'</span></span>'+
+    '<span class="pill '+pp[0]+'">'+esc(pp[1])+'</span></div>'+
+    '<dl class="loc-meta"><div><dt>Início</dt><dd>'+fmtD(l.inicio)+'</dd></div>'+
+    '<div><dt>'+(ativa?'Devolução prevista':'Devolvida em')+'</dt><dd>'+fmtD(ativa?l.fim:l.encerradaEm)+'</dd></div>'+
+    '<div><dt>Valor</dt><dd>'+(l.valorSemanal?brl(l.valorSemanal)+' por semana':brl(l.valorDiaria)+' por dia')+'</dd></div>'+
+    (l.valorSemanal?'<div><dt>Pagamento</dt><dd>toda '+DIAS[+l.diaPag||1]+'</dd></div>':'')+
+    (l.caucao?caucaoCust(l,ativa).dl:'')+'</dl>'+(l.caucao?caucaoCust(l,ativa).nota:'')+
+    '<div class="loc-pay"><span class="sub">Pago '+brl(pg)+(ativa&&px?' · próxima cobrança '+wd(px)+' '+fmtShort(px):'')+'</span></div>'+
+    custWhats(l,m)+
+    (!ativa&&valorPix>0?'<div class="loc-act"><button class="btn primary" data-act="pagarPix" data-id="'+esc(l.id)+'">Pagar por Pix</button></div>':'')+
+    custExtrato(l)+
+    (ocorrDe(l.id).length?'<hr class="hr"><p class="eyebrow">Multas e ocorrências</p>'+ocorrList(l,false):'')+
+    '<hr class="hr"><p class="eyebrow">Documentos</p>'+custDocs(l)+
+    '<hr class="hr"><p class="eyebrow">Pagamentos registrados</p>'+
+    (hist.length?'<ul class="pg-list ro">'+hist.map(function(p){return '<li><span>'+fmtD(p.data)+'<small>'+esc(FORMAS[p.forma]||'Outro')+'</small></span><b>'+brl(p.valor)+'</b></li>'}).join('')+'</ul>':'<p class="nota">Nenhum pagamento registrado ainda.</p>')+
+    '</article>';
+}
+function vCliente(){
+  var t=today(),nome=(S.meu&&S.meu.nome)||(S.acesso&&S.acesso.usuario)||'',prim=String(nome).split(/\s+/)[0];
+  var L=S.locacoes.slice().sort(function(a,b){return (a.status==='ativa'?0:1)-(b.status==='ativa'?0:1)||b.inicio.localeCompare(a.inicio)});
+  return '<section><div><p class="eyebrow">'+esc(parse(t).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}))+'</p><h2>Olá, '+esc(prim)+'</h2></div></section>'+
+    L.filter(function(l){return l.status==='ativa'}).map(custResumo).join('')+
+    (L.length?'<div class="cards" style="grid-template-columns:1fr">'+L.map(custLoc).join('')+'</div>':'<div class="empty"><span>Você ainda não tem uma locação. Fale com o dono para combinar a retirada da moto.</span></div>');
+}
+function pagarPix(id){
+  var l=S.locacoes.find(function(x){return x.id===id});if(!l)return;
+  if(!S.pix){openSheet({title:'Pagar por Pix',body:'<p class="nota">O dono ainda não cadastrou a chave Pix. Peça a ele os dados para pagamento.</p>'});return}
+  var at=atraso(l),sd=saldo(l),v=at>0?at:(sd>0?sd:(l.valorSemanal||0)),code='';
+  try{code=pixPayload(S.pix,v)}catch(e){}
+  openSheet({
+    title:'Pagar por Pix',
+    body:'<p class="resumo">Valor: '+brl(v)+'</p>'+
+      '<label>Pix copia e cola<textarea id="f-pix" rows="4" readonly>'+esc(code)+'</textarea></label>'+
+      '<div><button type="button" class="btn sm" data-act="copiar" data-alvo="f-pix">Copiar código</button></div>'+
+      '<p class="nota">Cole o código no app do seu banco, na opção Pix copia e cola. Depois que o pagamento cair, o dono registra aqui e o saldo atualiza.</p>'
+  });
+}
+
+/* ---------- render ---------- */
+var rt=0;function schedule(){clearTimeout(rt);rt=setTimeout(render,0)}
+function renderList(){var l=$('#lista');if(l)l.innerHTML=S.tab==='motos'?motosList():clientesList()}
+function render(){
+  document.querySelectorAll('.tabs [data-tab]').forEach(function(b){if(b.dataset.tab===S.tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+  var a=document.activeElement;
+  if(a&&a.id==='q'&&S.tab!=='painel'&&$('#lista')){renderList();return}
+  $('#view').innerHTML=!ready()?'<p class="muted pad">Carregando…</p>':(S.mode==='cliente'?vCliente:({painel:vPainel,motos:vMotos,clientes:vClientes,locacoes:vLocacoes})[S.tab])();
+}
+function go(tab){S.tab=tab;render();window.scrollTo(0,0)}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-act]');if(!el)return;
+  var a=el.dataset.act,id=el.dataset.id,v=el.dataset.v;
+  if(S.mode==='cliente'&&['sair','fechar','copiar','pagarPix','verTermo','verVist'].indexOf(a)<0)return;
+  if(a==='tab'){if(v&&el.dataset.tab==='locacoes')S.locFiltro=v;go(el.dataset.tab)}
+  else if(a==='pagamentos')formPag(id);
+  else if(a==='cfgPix')formPix();
+  else if(a==='cfgCobr')formCobr();
+  else if(a==='cfgContato')formContato();
+  else if(a==='whats'){var lw=S.locacoes.find(function(x){return x.id===id});if(lw)formWhats(lw)}
+  else if(a==='editLoc'){var le=S.locacoes.find(function(x){return x.id===id});if(le)formEditLoc(le)}
+  else if(a==='ocorr'){var lo=S.locacoes.find(function(x){return x.id===id});if(lo)formOcorr(lo)}
+  else if(a==='sugEncargo'){
+    var ls=S.locacoes.find(function(x){return x.id===id});if(!ls)return;
+    var sg=encargoSugerido(ls),cb=cobr();
+    if(!(sg.valor>0)){toast('Nada a lançar agora');return}
+    $('#f-otipo').value='encargo';$('#f-oval').value=sg.valor;
+    $('#f-odesc').value='Multa '+cb.multaPct+'% e juros '+cb.jurosMesPct+'% ao mês sobre '+brl(sg.base)+' em atraso';
+  }
+  else if(a==='delOcorr'){
+    if(!el.classList.contains('sure')){el.classList.add('sure');el.textContent='Confirmar';return}
+    var lid=el.dataset.loc;
+    store.del('ocorrencias',id).then(function(){S.ocorrencias=S.ocorrencias.filter(function(o){return o.id!==id});toast('Lançamento excluído');var lx=S.locacoes.find(function(x){return x.id===lid});if(lx)formOcorr(lx);schedule()}).catch(function(){toast('Não foi possível excluir.')});
+  }
+  else if(a==='copiarPix'||a==='copiar'){
+    var alvo=el.dataset.alvo||'f-pix',ta=$('#'+alvo);if(!ta)return;ta.select();
+    var ok;try{ok=navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(ta.value):Promise.reject()}catch(err){ok=Promise.reject()}
+    ok.then(function(){toast(alvo==='f-pix'?'Código Pix copiado':'Copiado')},function(){ta.select();toast('Selecione o texto e copie manualmente')});
+  }
+  else if(a==='pagarPix')pagarPix(id);
+  else if(a==='verTermo'){var lt=S.locacoes.find(function(x){return x.id===id});if(lt)formTermo(lt,false)}
+  else if(a==='verVist'){var vv=S.vistorias.find(function(x){return x.id===id});if(vv)verVist(vv)}
+  else if(a==='termo'){var lt2=S.locacoes.find(function(x){return x.id===id});if(lt2)formTermo(lt2,true)}
+  else if(a==='modeloTermo')formModeloTermo();
+  else if(a==='termoPadrao'){var tt=$('#f-ttexto');if(tt)tt.value=TERMO_PADRAO}
+  else if(a==='vistorias'){var lv=S.locacoes.find(function(x){return x.id===id});if(lv)formVistorias(lv)}
+  else if(a==='vistoria'){var lv2=S.locacoes.find(function(x){return x.id===id});if(lv2)formVistoria(lv2,el.dataset.tipo)}
+  else if(a==='novaManut'){var mm=moto(id);if(mm)formManut(mm)}
+  else if(a==='delManut'){
+    if(!el.classList.contains('sure')){el.classList.add('sure');el.textContent='Confirmar';return}
+    var mid=el.dataset.moto;
+    store.del('manutencoes',id).then(function(){S.manutencoes=S.manutencoes.filter(function(r){return r.id!==id});toast('Registro excluído');var m2=moto(mid);if(m2)formMoto(m2);schedule()}).catch(function(){toast('Não foi possível excluir o registro.')});
+  }
+  else if(a==='acessoNovo'||a==='acessoSenha'){var cc=cliente(id);if(cc)formAcesso(cc)}
+  else if(a==='backup'){exportarBackup().then(function(){toast('Backup gerado')}).catch(function(){toast('Não foi possível gerar o backup.')})}
+  else if(a==='gerarSenha'){var pw=$('#f-pw');if(pw)pw.value=genSenha()}
+  else if(a==='acessoDel'){
+    if(!el.classList.contains('sure')){el.classList.add('sure');el.textContent='Toque de novo para remover';return}
+    removerAcesso(id).then(function(){toast('Acesso removido');closeSheet()}).catch(function(){toast('Não foi possível remover o acesso.')});
+  }
+  else if(a==='delPag'){
+    if(!el.classList.contains('sure')){el.classList.add('sure');el.textContent='Confirmar';return}
+    var locId=el.dataset.loc;
+    store.del('pagamentos',id).then(function(){S.pagamentos=S.pagamentos.filter(function(p){return p.id!==id});toast('Pagamento excluído');formPag(locId);schedule()}).catch(function(){toast('Não foi possível excluir o pagamento.')});
+  }
+  else if(a==='novaMoto')formMoto();
+  else if(a==='editMoto'){var m=moto(id);if(m)formMoto(m)}
+  else if(a==='novoCliente')formCliente();
+  else if(a==='editCliente'){var c=cliente(id);if(c)formCliente(c)}
+  else if(a==='novaLoc')formLoc();
+  else if(a==='encerrar'){var l=S.locacoes.find(function(x){return x.id===id});if(l)formEncerrar(l)}
+  else if(a==='filtro'){S.filtro=v;render()}
+  else if(a==='locFiltro'){S.locFiltro=v;render()}
+  else if(a==='arquivarLoc'){
+    var la=S.locacoes.find(function(x){return x.id===id});if(!la)return;var arq=v==='1';
+    store.update('locacoes',id,{arquivada:arq}).then(function(){la.arquivada=arq;toast(arq?'Locação arquivada':'Locação desarquivada');schedule()}).catch(function(){toast('Não foi possível atualizar a locação.')});
+  }
+  else if(a==='excluirLoc'){
+    if(!el.classList.contains('sure')){el.classList.add('sure');el.textContent='Excluir de vez?';return}
+    var lx=S.locacoes.find(function(x){return x.id===id});if(!lx||lx.status==='ativa')return;
+    var jb=[];
+    S.vistorias.filter(function(x){return x.locacaoId===id}).forEach(function(x){
+      jb.push(function(){return store.list(fotosPath(x.id)).then(function(fs){return fs.reduce(function(p,f){return p.then(function(){return store.del(fotosPath(x.id),f.id)})},Promise.resolve())})});
+      jb.push(function(){return store.del('vistorias',x.id)});
+    });
+    S.pagamentos.filter(function(x){return x.locacaoId===id}).forEach(function(x){jb.push(function(){return store.del('pagamentos',x.id)})});
+    S.ocorrencias.filter(function(x){return x.locacaoId===id}).forEach(function(x){jb.push(function(){return store.del('ocorrencias',x.id)})});
+    jb.push(function(){return store.del('locacoes',id)});
+    jb.reduce(function(p,j){return p.then(j)},Promise.resolve()).then(function(){
+      S.vistorias=S.vistorias.filter(function(x){return x.locacaoId!==id});S.pagamentos=S.pagamentos.filter(function(x){return x.locacaoId!==id});
+      S.ocorrencias=S.ocorrencias.filter(function(x){return x.locacaoId!==id});S.locacoes=S.locacoes.filter(function(x){return x.id!==id});
+      toast('Locação excluída');schedule();
+    }).catch(function(){toast('Não foi possível excluir a locação.')});
+  }
+  else if(a==='fechar')closeSheet();
+  else if(a==='sair')lock();
+  else if(a==='removerExemplos'){
+    var jobs=[];['motos','clientes','locacoes','pagamentos','acessos','vistorias','manutencoes','ocorrencias'].forEach(function(col){S[col].filter(function(x){return x.exemplo}).forEach(function(x){
+      if(col==='vistorias')jobs.push(function(){return store.list(fotosPath(x.id)).then(function(fs){return fs.reduce(function(p,f){return p.then(function(){return store.del(fotosPath(x.id),f.id)})},Promise.resolve())})});
+      jobs.push(function(){return store.del(col,x.id)});
+    })});
+    jobs.reduce(function(p,j){return p.then(j)},Promise.resolve()).then(function(){toast('Exemplos removidos')}).catch(function(){toast('Não foi possível remover os exemplos.')});
+  }
+});
+$('#sheet').addEventListener('click',function(e){if(e.target.id==='sheet')closeSheet()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet()});
+document.addEventListener('input',function(e){if(e.target.id==='q'){S.q[S.tab]=e.target.value;renderList()}});
+
+/* ---------- início ---------- */
+render();
+var unsubs=[],motoSubs={},storeP=null;
+function getStore(){
+  if(storeP)return storeP;
+  storeP=(async function(){
+    if(SB){store=supaStore(SB);return store}
+    var db=null;
+    try{db=window.claude&&window.claude.use?await window.claude.use('db'):null}catch(err){db=null}
+    if(db){store=dbStore(db)}
+    else{store=memStore();S.demo=true;$('#modo').hidden=false;await seedMem(store)}
+    return store;
+  })();
+  return storeP;
+}
+async function startAdmin(){
+  var st=await getStore();
+  COLS_ADMIN.forEach(function(c){
+    unsubs.push(st.sub(c,function(list){S[c]=list;if(c==='config'){S.pix=list.find(function(x){return x.id==='pix'})||null;S.termo=list.find(function(x){return x.id==='termo'})||null;S.cobranca=list.find(function(x){return x.id==='cobranca'})||null;S.contato=list.find(function(x){return x.id==='contato'})||null}S.loaded[c]=true;schedule()}));
+  });
+}
+/* O cliente só assina os próprios registros: contrato e pagamentos pelo clienteId, e as motos dos contratos dele */
+async function startCliente(a){
+  var st=await getStore();
+  S.acesso=a;
+  unsubs.push(st.subDoc('clientes',a.clienteId,function(d){S.meu=d;S.loaded.meu=true;schedule()}));
+  unsubs.push(st.subDoc('config','pix',function(d){S.pix=d;S.loaded.config=true;schedule()}));
+  unsubs.push(st.subDoc('config','termo',function(d){S.termo=d;S.loaded.termo=true;schedule()}));
+  unsubs.push(st.subWhere('vistorias','clienteId',a.clienteId,function(l){S.vistorias=l;S.loaded.vistorias=true;schedule()}));
+  unsubs.push(st.subWhere('pagamentos','clienteId',a.clienteId,function(l){S.pagamentos=l;S.loaded.pagamentos=true;schedule()}));
+  unsubs.push(st.subWhere('ocorrencias','clienteId',a.clienteId,function(l){S.ocorrencias=l;S.loaded.ocorrencias=true;schedule()}));
+  unsubs.push(st.subDoc('config','cobranca',function(d){S.cobranca=d;schedule()}));
+  unsubs.push(st.subDoc('config','contato',function(d){S.contato=d;schedule()}));
+  unsubs.push(st.subWhere('locacoes','clienteId',a.clienteId,function(l){
+    S.locacoes=l;
+    l.forEach(function(x){
+      if(!x.motoId||motoSubs[x.motoId])return;
+      motoSubs[x.motoId]=1;
+      unsubs.push(st.subDoc('motos',x.motoId,function(d){S.motos=S.motos.filter(function(m){return m.id!==x.motoId});if(d)S.motos.push(d);schedule()}));
+    });
+    S.loaded.locacoes=true;schedule();
+  }));
+}
+
+/* ---------- login (trava de tela; só guarda hashes de senha) ---------- */
+var AUTH={salt:'5d0f7a3c9b1e4a62c8d4e1f0a7b39c25',iter:150000,hash:'ebfbcee2daa548289d4318b5e47cf2d14ff5de69bd62434bd2481ee004e2a22d'};
+function hex(buf){return Array.prototype.map.call(new Uint8Array(buf),function(b){return b.toString(16).padStart(2,'0')}).join('')}
+function unhex(h){var a=new Uint8Array(h.length/2);for(var i=0;i<a.length;i++)a[i]=parseInt(h.substr(i*2,2),16);return a}
+async function derive(user,pass,saltHex,iter){
+  var key=await crypto.subtle.importKey('raw',new TextEncoder().encode(user.trim().toLowerCase()+'\u0000'+pass),'PBKDF2',false,['deriveBits']);
+  var bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:unhex(saltHex),iterations:iter},key,256);
+  return hex(bits);
+}
+async function tryCliente(u,p){
+  var st=await getStore(),list=await st.query('acessos','usuario',u.trim().toLowerCase()),a=list[0];
+  var h=await derive(u,p,a?a.salt:AUTH.salt,a?a.iter:AUTH.iter);
+  return (a&&a.ativo!==false&&h===a.hash)?a:null;
+}
+var setSess=function(v){try{sessionStorage.setItem('garagem-auth',v)}catch(x){}};
+var clearSess=function(){try{sessionStorage.removeItem('garagem-auth')}catch(x){}};
+function resetState(){
+  unsubs.forEach(function(u){try{u()}catch(x){}});unsubs=[];motoSubs={};
+  S.motos=[];S.clientes=[];S.locacoes=[];S.pagamentos=[];S.config=[];S.acessos=[];S.vistorias=[];S.manutencoes=[];S.ocorrencias=[];S.cobranca=null;S.contato=null;S.termo=null;S.pix=null;S.meu=null;S.acesso=null;S.loaded={};S.mode=null;
+  S.tab='painel';S.filtro='todas';S.locFiltro='ativas';S.q={motos:'',clientes:''};
+}
+async function unlock(mode,a){
+  resetState();
+  S.mode=mode;S.cols=mode==='cliente'?COLS_CLI:COLS_ADMIN;
+  $('#login').hidden=true;$('#shell').hidden=false;
+  $('.tabs').hidden=mode==='cliente';
+  $('#hsub').textContent=mode==='cliente'?'Minha locação':'Locação de motos · painel do dono';
+  render();
+  if(mode==='cliente')await startCliente(a);else await startAdmin();
+}
+function lock(){
+  clearSess();closeSheet();resetState();
+  if(SB)try{SB.auth.signOut()}catch(x){}
+  $('#shell').hidden=true;$('#login').hidden=false;
+  $('#lu').value='';$('#lp').value='';$('#lerr').textContent='';$('#lu').focus();
+}
+
+async function perfilAtual(){
+  var u=await SB.auth.getUser();
+  var id=u&&u.data&&u.data.user&&u.data.user.id;
+  if(!id)return null;
+  var r=await SB.from('profiles').select('role,cliente_id').eq('user_id',id).maybeSingle();
+  if(r.error||!r.data)return null;
+  return r.data;
+}
+async function entrarComPerfil(){
+  var p=await perfilAtual();
+  if(!p)return false;
+  if(p.role==='admin'){await unlock('admin');return true}
+  if(p.role==='cliente'&&p.cliente_id){await unlock('cliente',{id:'a-'+p.cliente_id,clienteId:p.cliente_id});return true}
+  return false;
+}
+async function loginSupa(u,pw){
+  var r=await SB.auth.signInWithPassword({email:emailDe(u),password:pw});
+  if(r.error){
+    var m=String(r.error.message||''),st=r.error.status;
+    if(/confirm/i.test(m))return 'Usuário ainda não confirmado no Supabase. Marque "Auto Confirm User" ao criá-lo.';
+    if(/invalid login|invalid_credentials|invalid credentials/i.test(m)||st===400)return 'Usuário ou senha incorretos.';
+    return 'Sem conexão com o servidor ('+(m||'erro')+').';
+  }
+  var ok=false;
+  try{ok=await entrarComPerfil()}catch(e){ok=false}
+  if(!ok){await SB.auth.signOut();return 'Este usuário não tem acesso ao sistema.'}
+  return '';
+}
+
+function formSetup(){
+  openSheet({
+    title:'Criar administrador',
+    submitLabel:'Criar e entrar',
+    body:'<p class="nota">Primeiro acesso: crie o login do dono do sistema. Esta opção some assim que o administrador existir.</p>'+
+      '<label>Usuário<input id="f-su" name="usuario" required autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" value="admin"></label>'+
+      '<label>Senha<input id="f-sp" name="senha" type="password" required minlength="8" autocomplete="new-password"></label>'+
+      '<label>Repita a senha<input id="f-sp2" name="senha2" type="password" required minlength="8" autocomplete="new-password"></label>'+
+      '<p class="nota">Use pelo menos 8 caracteres. Anote a senha: ela só pode ser trocada pelo painel do Supabase.</p>',
+    onSubmit:function(fd){
+      var u=(fd.usuario||'').trim().toLowerCase(),pw=fd.senha||'';
+      if(u.indexOf('@')>-1)return 'Digite só um nome de usuário, como admin, e não um e-mail.';
+      if(!/^[a-z0-9._-]{3,30}$/.test(u))return 'Usuário: use de 3 a 30 letras minúsculas, números, ponto, hífen ou sublinhado.';
+      if(pw.length<8)return 'A senha precisa ter pelo menos 8 caracteres.';
+      if(pw!==fd.senha2)return 'As duas senhas não são iguais.';
+      return setupAdmin(u,pw);
+    }
+  });
+}
+async function setupAdmin(u,pw){
+  try{
+    var r=await SB.auth.signUp({email:emailDe(u),password:pw});
+    var ja='Esse usuário já existe no Supabase. Apague-o em Authentication > Users e tente de novo.';
+    if(r.error){
+      var m=String(r.error.message||'');
+      if(/registered|exists/i.test(m))return ja;
+      if(/rate/i.test(m))return 'O Supabase limitou os envios por agora. Desligue "Confirm email" e tente de novo em alguns minutos.';
+      return 'Não foi possível criar o administrador ('+m+').';
+    }
+    var user=r.data&&r.data.user;
+    if(!user||!user.id||(Array.isArray(user.identities)&&!user.identities.length))return ja;
+    var rp=await SB.rpc('criar_primeiro_admin',{p_user:user.id});
+    if(rp.error){
+      if(/existe administrador/i.test(rp.error.message||''))return 'Já existe um administrador. Entre com o login dele.';
+      return 'Não foi possível definir o administrador ('+(rp.error.message||'erro')+'). Rode o schema.sql atualizado no Supabase.';
+    }
+    var li=await SB.auth.signInWithPassword({email:emailDe(u),password:pw});
+    if(li.error)return 'Administrador criado, mas o login falhou ('+li.error.message+'). Tente entrar pela tela inicial.';
+    $('#lsetup').hidden=true;
+    setTimeout(function(){entrarComPerfil().catch(function(){})},0);
+    return '';
+  }catch(e){return 'Falha de conexão com o servidor. Tente de novo.'}
+}
+$('#lsetup').addEventListener('click',formSetup);
+var fails=0;
+$('#lf').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var btn=$('#lgo'),err=$('#lerr'),u=$('#lu').value,p=$('#lp').value;
+  err.textContent='';
+  if(!u.trim()||!p){err.textContent='Informe o usuário e a senha.';return}
+  if(!(window.crypto&&window.crypto.subtle)){err.textContent='Este navegador não permite verificar a senha com segurança.';return}
+  btn.disabled=true;
+  try{
+    if(SB){
+      var em=await loginSupa(u,p);
+      if(em){fails++;await new Promise(function(r){setTimeout(r,Math.min(4000,500*fails))});err.textContent=em;$('#lp').value='';$('#lp').focus()}
+      else{fails=0;$('#lp').value=''}
+      btn.disabled=false;return;
+    }
+    var h=await derive(u,p,AUTH.salt,AUTH.iter);
+    if(h===AUTH.hash){fails=0;setSess('admin');$('#lp').value='';await unlock('admin')}
+    else{
+      var a=await tryCliente(u,p);
+      if(a){fails=0;setSess('c:'+a.id);$('#lp').value='';await unlock('cliente',a)}
+      else{fails++;await new Promise(function(r){setTimeout(r,Math.min(4000,500*fails))});err.textContent='Usuário ou senha incorretos.';$('#lp').value='';$('#lp').focus()}
+    }
+  }catch(x){err.textContent='Não foi possível verificar agora. Tente de novo.'}
+  btn.disabled=false;
+});
+$('#lshow').addEventListener('click',function(){var i=$('#lp'),s=i.type==='password';i.type=s?'text':'password';this.textContent=s?'Ocultar':'Mostrar'});
+
+if(SUPABASE_URL&&!window.supabase){$('#lerr').textContent='Não foi possível carregar o sistema. Verifique a internet e recarregue a página.';$('#lgo').disabled=true}
+if(SB){
+  SB.rpc('precisa_setup').then(function(r){if(r&&r.data===true)$('#lsetup').hidden=false}).catch(function(){});
+  SB.auth.onAuthStateChange(function(ev){if(ev==='SIGNED_OUT'&&S.mode)lock()});
+  SB.auth.getSession().then(function(r){
+    if(r&&r.data&&r.data.session)return entrarComPerfil().then(function(ok){if(!ok){SB.auth.signOut();$('#lu').focus()}});
+    $('#lu').focus();
+  }).catch(function(){$('#lu').focus()});
+}
+/* sem banco disponível o app abre em demonstração, com um cliente de teste */
+if(!SB&&!SUPABASE_URL)getStore().then(function(){if(S.demo){var h=$('#lhint');h.textContent='Demonstração sem dados reais. Administrador: demo / demo1234. Cliente: rafael.moreira / demo1234';h.hidden=false}}).catch(function(){});
+var sess=null;try{sess=sessionStorage.getItem('garagem-auth')}catch(x){}
+if(SB){}
+else if(sess==='admin'||sess==='1')unlock('admin');
+else if(sess&&sess.indexOf('c:')===0){
+  getStore().then(function(st){return st.getDoc('acessos',sess.slice(2))}).then(function(a){
+    if(a&&a.ativo!==false)unlock('cliente',a);else{clearSess();$('#lu').focus()}
+  }).catch(function(){$('#lu').focus()});
+}else $('#lu').focus();
+})();
+</script>
+</body>
+</html>
