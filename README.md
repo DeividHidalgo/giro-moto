@@ -1,96 +1,97 @@
 # Giro Moto
 
-> 🇧🇷 [Leia em português](README.pt-BR.md)
+> 🇬🇧 [Read in English](README.en.md)
 
-Mobile-first management system for a small **motorcycle rental** business: an owner panel and a read-only customer view, in a **single static HTML file**. It runs fully in the browser in demo mode, or against a [Supabase](https://supabase.com) backend with real authentication and database-enforced access control.
+Sistema de gestão para **locação de motos**, pensado para o celular: painel do dono e visão do cliente em **um único arquivo HTML estático**. Roda inteiro no navegador em modo demonstração, ou com um backend [Supabase](https://supabase.com) (login real e controle de acesso feito pelo próprio banco de dados).
 
 <p>
-  <img src="docs/screenshots/02-dashboard.png" width="16%" alt="Dashboard">
-  <img src="docs/screenshots/03-bikes.png" width="16%" alt="Bikes">
-  <img src="docs/screenshots/05-rentals.png" width="16%" alt="Rentals">
-  <img src="docs/screenshots/04-customers.png" width="16%" alt="Customers">
-  <img src="docs/screenshots/06-customer.png" width="16%" alt="Customer view"><img src="docs/screenshots/07-customer-overdue.png" width="16%" alt="Customer view, overdue">
+  <img src="docs/screenshots/02-dashboard.png" width="16%" alt="Painel">
+  <img src="docs/screenshots/03-bikes.png" width="16%" alt="Motos">
+  <img src="docs/screenshots/05-rentals.png" width="16%" alt="Locações">
+  <img src="docs/screenshots/04-customers.png" width="16%" alt="Clientes">
+  <img src="docs/screenshots/06-customer.png" width="16%" alt="Visão do cliente">
+  <img src="docs/screenshots/07-customer-overdue.png" width="16%" alt="Visão do cliente em atraso">
 </p>
 
-**Live demo:** enable GitHub Pages (see below), then sign in with `demo` / `demo1234` (owner) or `rafael.moreira` / `demo1234` (customer). Demo data lives only in memory and is never saved.
+**Demonstração online:** ative o GitHub Pages (veja abaixo) e entre com `demo` / `demo1234` (dono) ou `rafael.moreira` / `demo1234` (cliente). Os dados de exemplo ficam só na memória do navegador e nunca são salvos.
 
-## Features
+## Recursos
 
-- **Fleet** – bikes with status (available / rented / maintenance), plate, mileage, oil-change and service reminders.
-- **Customers** – CPF (validated), RG, CNH expiry alerts, full address auto-filled from the CEP ([ViaCEP](https://viacep.com.br)), and attached ID documents (photos or small PDFs, visible to the owner only).
-- **Weekly rentals** – fixed weekly price, due every Monday or Friday; payments are allocated to the oldest open instalment (FIFO).
-- **Late fees** – configurable fine and daily interest are *suggested*, then posted by the owner as occurrences (nothing is charged silently). Security deposit tracking.
-- **Pix** – static *copia-e-cola* payload generated client-side (EMV TLV + CRC16-CCITT) for phone, CPF/CNPJ, e-mail or random keys.
-- **WhatsApp** – one-tap collection messages (with the Pix code) for the owner; contact buttons for the customer (`wa.me` links, no API cost).
-- **Rental agreement** – editable template (fills in the renter's CPF, RG and address), customer acceptance, printable.
-- **Inspection** – check-in/check-out with photos.
-- **Maintenance & per-bike profit** – costs vs. revenue by motorcycle.
-- **Customer logins** – created only by the owner; customers see **only their own** data: amount due and next due date at the top, weekly instalment statement (paid / open / late), late-fee explanation, deposit status, contract, inspection photos and Pix.
-- **Backup export**, installable PWA, dark/light themes.
+- **Frota:** motos com status (disponível, alugada ou em manutenção), placa, km e lembretes de troca de óleo e revisão.
+- **Clientes:** CPF (validado), RG, alerta de CNH vencendo, endereço preenchido automaticamente pelo CEP (via [ViaCEP](https://viacep.com.br)) e anexos de documentos (fotos ou PDFs pequenos, visíveis só ao dono).
+- **Locação semanal:** valor fixo por semana, cobrança toda segunda ou sexta; os pagamentos quitam primeiro as parcelas mais antigas.
+- **Multa e juros por atraso:** apenas *sugeridos*; o dono lança como ocorrência (nada é cobrado em silêncio). Controle de caução.
+- **Pix:** código *copia e cola* gerado no próprio navegador (BR Code com CRC16) para chave de celular, CPF/CNPJ, e-mail ou aleatória.
+- **WhatsApp:** mensagem de cobrança com o código Pix para o dono; botões de contato para o cliente (links `wa.me`, sem custo de API).
+- **Termo de locação:** modelo editável (preenche CPF, RG e endereço do locatário), com aceite do cliente.
+- **Vistoria:** entrega e devolução com fotos.
+- **Manutenção e resultado por moto:** custos x receita.
+- **Logins de cliente:** criados só pelo dono. O cliente vê **apenas** os próprios dados: valor devido e próximo vencimento no topo, extrato das parcelas semanais (paga, em aberto ou atrasada), explicação de multa e juros, caução, termo, vistorias com fotos e Pix.
+- **Exportar backup**, PWA instalável, tema claro e escuro.
 
-## Architecture
+## Arquitetura
 
 ```mermaid
 flowchart LR
-  B[Browser<br/>public/index.html] -- demo mode --> M[(in-memory store)]
+  B[Navegador<br/>public/index.html] -- modo demo --> M[(memória)]
   B -- Supabase JS --> A[Supabase Auth]
   B -- Supabase JS --> D[(Postgres: docs, profiles)]
-  D -- RLS policies --> D
+  D -- políticas RLS --> D
 ```
 
-There is no build step and no framework. The app talks to a small store interface with interchangeable implementations (in-memory for demo, Supabase for production).
+Não há etapa de build nem framework. O app conversa com uma pequena interface de armazenamento, com implementações intercambiáveis: memória (demonstração) e Supabase (produção).
 
-**Data model.** One generic table, `docs(col, id, data jsonb)`, holds every collection (`motos`, `clientes`, `locacoes`, `pagamentos`, …). Nested collections use path-like names such as `vistorias/<id>/fotos`. A second table, `profiles(user_id, role, cliente_id)`, maps each auth user to `admin` or `cliente`. This keeps the schema trivial to evolve; the trade-off is that queries filter on `data->>'field'` instead of typed columns.
+**Modelo de dados.** Uma tabela genérica, `docs(col, id, data jsonb)`, guarda todas as coleções (`motos`, `clientes`, `locacoes`, `pagamentos`, …). Coleções aninhadas usam nomes em forma de caminho, como `vistorias/<id>/fotos` e `clientes/<id>/anexos`. Uma segunda tabela, `profiles(user_id, role, cliente_id)`, liga cada usuário a `admin` ou `cliente`. Isso deixa o esquema fácil de evoluir; em troca, as consultas filtram por `data->>'campo'` em vez de colunas tipadas.
 
-## Security model
+## Segurança
 
-Authorization is enforced **in the database**, not in the UI:
+A autorização é feita **no banco**, não na tela:
 
-- Row Level Security on `docs` and `profiles`; `anon` has no table access.
-- Customers can read only rows tied to their own `cliente_id` (contract, payments, bike, inspection photos) plus the Pix and agreement config. They cannot write anything.
-- Admin-only RPCs (`admin_set_password`, `admin_delete_user`) are `security definer`; the one-time `criar_primeiro_admin` refuses to run once an admin exists.
-- Security-definer helpers avoid RLS recursion.
-- Strict CSP in `public/_headers`.
+- Row Level Security em `docs` e `profiles`; o acesso anônimo às tabelas é bloqueado.
+- O cliente só lê linhas ligadas ao próprio `cliente_id` (contrato, pagamentos, moto, fotos de vistoria) mais a configuração de Pix e do termo. Ele não grava nada, e não lê os anexos de documentos.
+- As funções administrativas (`admin_set_password`, `admin_delete_user`) são `security definer`; a `criar_primeiro_admin`, de uso único, se recusa a rodar quando já existe um administrador.
+- Funções auxiliares `security definer` evitam recursão nas políticas.
+- CSP restritiva em `public/_headers`.
 
-These rules are covered by `tests/sql/rls.test.sql`.
+Essas regras são cobertas por `tests/sql/rls.test.sql`.
 
-## Run it
+## Como usar
 
-**Demo (no setup):**
+**Demonstração (sem configurar nada):**
 
 ```bash
-npm run serve        # or: open public/index.html in a browser
+npm run serve        # ou abra public/index.html no navegador
 ```
 
-**With Supabase:**
+**Com Supabase:**
 
-1. Create a free Supabase project. In *Authentication → Sign In / Providers*, turn **Confirm email** off.
-2. Run [`sql/schema.sql`](sql/schema.sql) in the SQL editor.
-3. Copy `public/config.example.js` to `public/config.js` and fill in your URL, publishable key and an e-mail you own (`EMAIL_BASE`; usernames become `you+username@domain`).
-4. Update `connect-src` in `public/_headers` if your host honours it, deploy `public/` anywhere static (Netlify, Cloudflare Pages, GitHub Pages), open it and use **Primeiro acesso: criar administrador**.
+1. Crie um projeto gratuito no Supabase. Em *Authentication → Sign In / Providers*, desligue **Confirm email**.
+2. No *SQL Editor*, rode o conteúdo de [`sql/schema.sql`](sql/schema.sql).
+3. Copie `public/config.example.js` para `public/config.js` e preencha a URL, a chave publicável e um e-mail seu em `EMAIL_BASE` (o usuário `rafael` vira `voce+rafael@dominio`; é preciso porque o Supabase recusa domínios inexistentes).
+4. Publique a pasta `public/` em qualquer hospedagem estática (Netlify, Cloudflare Pages, GitHub Pages), abra o site e use **Primeiro acesso: criar administrador**. Se a hospedagem respeitar o `_headers`, confira o `connect-src` com a URL do seu Supabase.
 
-**GitHub Pages demo:** *Settings → Pages → Source: GitHub Actions*. The included workflow publishes `public/` with an empty config, i.e. demo mode.
+**Demo no GitHub Pages:** *Settings → Pages → Source: GitHub Actions*. O workflow incluso publica `public/` com a configuração vazia, ou seja, em modo demonstração.
 
-## Tests
+## Testes
 
 ```bash
-npm test                      # 8 UI/logic flows, Node ≥ 18, no dependencies
-PGHOST=localhost PGUSER=postgres bash tests/sql/run.sh   # RLS tests on a throw-away local Postgres
+npm test                                                  # 11 fluxos de interface e regras (Node ≥ 18, sem dependências)
+PGHOST=localhost PGUSER=postgres bash tests/sql/run.sh    # testes de RLS em um Postgres local descartável
 ```
 
-The UI flows run the real app script against an in-memory DOM and a fake Supabase client. The SQL test creates and drops its own database and refuses to run against Supabase hosts.
+Os fluxos de interface rodam o script real do app contra um DOM em memória e um cliente Supabase simulado, com a data fixada para o resultado não depender do dia da semana. O teste de SQL cria e apaga o próprio banco e se recusa a rodar contra hosts do Supabase.
 
-## Limitations and roadmap
+## Limitações e próximos passos
 
-- Pix payments are **confirmed manually**; automatic confirmation needs a payment provider and a server function.
-- No GPS tracking, no automatic billing via WhatsApp API (links only).
-- Photos are stored in the database; move to object storage for larger fleets.
-- Free-tier Supabase has no automatic backups and pauses after inactivity (use the export button).
-- Not yet exercised against a live Supabase from CI; the fake client and local Postgres cover the logic and the policies.
-- UI is in Brazilian Portuguese; i18n is not implemented.
+- A confirmação do Pix é **manual**; a automática exige um provedor de pagamento e uma função de servidor.
+- Sem rastreamento por GPS; o WhatsApp funciona só por links (sem API).
+- As fotos e os anexos ficam no banco; para frotas maiores, migrar para armazenamento de arquivos.
+- O plano gratuito do Supabase não faz backup automático e pausa por inatividade (use o botão de exportar).
+- Ainda não foi exercitado contra um Supabase real pela integração contínua; o cliente simulado e o Postgres local cobrem a lógica e as políticas.
+- A interface está só em português do Brasil.
 
-> **Legal notice.** The rental agreement template, fines and interest are examples only. Have a lawyer review them before use. This software is provided as is, without warranty.
+> **Aviso legal.** O modelo de termo, as multas e os juros são apenas exemplos. Peça a revisão de um advogado antes de usar. Software fornecido "como está", sem garantia.
 
-## License
+## Licença
 
 [MIT](LICENSE)
